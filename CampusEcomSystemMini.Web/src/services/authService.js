@@ -54,15 +54,22 @@ export async function request(path, options = {}) {
   }
 
   if (!response.ok) {
-    const message =
-      typeof data === "string"
-        ? data
-        : data?.message ||
-          data?.title ||
-          data?.detail ||
-          `Yêu cầu thất bại (${response.status})`;
+  const message =
+    typeof data === "string"
+      ? data
+      : data?.message ||
+        data?.title ||
+        data?.detail ||
+        `Yêu cầu thất bại (${response.status})`;
 
-    const error = new Error(message);
+  const error = new Error(message);
+
+  // Quan trọng: preferenceService cần status để bắt 404
+  error.status = response.status;
+  error.data = data;
+
+  throw error;
+}
 
     // Giữ lại HTTP status để service khác xử lý riêng (ví dụ 404)
     error.status = response.status;
