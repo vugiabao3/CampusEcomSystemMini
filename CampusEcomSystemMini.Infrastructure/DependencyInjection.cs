@@ -52,6 +52,12 @@ public static class DependencyInjection
         services.AddScoped<
             ICurrentUserService,
             CurrentUserService>();
+
+        // Smart Matching (Module 2)
+        services.AddScoped<
+            IMatchingService,
+            MatchingService>();
+
         return services;
     }
 }

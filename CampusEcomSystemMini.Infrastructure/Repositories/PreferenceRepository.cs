@@ -24,6 +24,14 @@ public class PreferenceRepository : IPreferenceRepository
                 cancellationToken);
     }
 
+    public async Task<List<Preference>> GetAllAsync(
+        CancellationToken cancellationToken)
+    {
+        return await _context.Preferences
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task AddAsync(
         Preference preference,
         CancellationToken cancellationToken)

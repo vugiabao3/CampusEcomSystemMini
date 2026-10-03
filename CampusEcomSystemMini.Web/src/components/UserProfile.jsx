@@ -6,6 +6,7 @@ export default function UserProfile({
   onChangePassword,
   onOpenPreferences,
   onViewMyPosts,
+  onOpenMatching,
   loading,
   error,
 }) {
@@ -95,6 +96,15 @@ export default function UserProfile({
           disabled={loading}
         >
           Bài đăng của tôi
+        </button>
+
+        <button
+          className="btn btn--ghost"
+          type="button"
+          onClick={onOpenMatching}
+          disabled={loading}
+        >
+          Smart Matching
         </button>
       </div>
 

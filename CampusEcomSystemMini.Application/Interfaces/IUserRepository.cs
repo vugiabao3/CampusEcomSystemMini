@@ -13,6 +13,9 @@ public interface IUserRepository
         Guid id,
         CancellationToken cancellationToken);
 
+    Task<List<User>> GetAllAsync(
+        CancellationToken cancellationToken);
+
     Task AddAsync(
         User user,
         CancellationToken cancellationToken);

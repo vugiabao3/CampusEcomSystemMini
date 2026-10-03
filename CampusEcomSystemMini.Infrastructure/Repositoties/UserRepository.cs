@@ -34,6 +34,14 @@ public class UserRepository : IUserRepository
                 cancellationToken);
     }
 
+    public async Task<List<User>> GetAllAsync(
+        CancellationToken cancellationToken)
+    {
+        return await _context.Users
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task AddAsync(
         User user,
         CancellationToken cancellationToken)

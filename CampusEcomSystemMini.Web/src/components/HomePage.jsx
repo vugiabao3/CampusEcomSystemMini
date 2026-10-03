@@ -4,6 +4,7 @@ export default function HomePage({
   onViewProfile,
   onSetupPreferences,
   onViewMyPosts,
+  onOpenMatching,
 }) {
   const fullName =
     user?.fullName ??
@@ -203,7 +204,7 @@ export default function HomePage({
 
           <div className="module-grid">
 
-            <div className="module-card">
+            <div className="module-card module-card--active">
               <span>01</span>
               <h3>
                 Smart Matching
@@ -212,6 +213,14 @@ export default function HomePage({
                 Tìm nhóm học tập và phòng trọ
                 phù hợp.
               </p>
+
+              <button
+                className="module-card-action"
+                type="button"
+                onClick={onOpenMatching}
+              >
+                Tìm nhóm học
+              </button>
             </div>
 
             <div className="module-card">

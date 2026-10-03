@@ -12,6 +12,7 @@ import EditProfile from "./components/EditProfile";
 import ChangePassword from "./components/ChangePassword";
 import Preferences from "./components/Preferences";
 import PostsPage from "./components/PostsPage";
+import SmartMatching from "./components/SmartMatching";
 
 import {
   getMe,
@@ -47,9 +48,15 @@ import {
   getPostLikes,
 } from "./services/postService";
 
+import {
+  getStudentMatches,
+  getStudentMatch,
+} from "./services/matchingService";
+
 import "./styles/auth.css";
 import "./styles/preferences.css";
 import "./styles/posts.css";
+import "./styles/matching.css";
 
 export default function App() {
 
@@ -115,6 +122,24 @@ export default function App() {
     type: "",
     time: "",
   });
+
+  // =====================================================
+  // SMART MATCHING (MODULE 2)
+  // =====================================================
+
+  const [matches, setMatches] = useState([]);
+
+  const [matchesLoading, setMatchesLoading] = useState(false);
+
+  const [matchesError, setMatchesError] = useState("");
+
+  const [matchDetailOpen, setMatchDetailOpen] = useState(false);
+
+  const [matchDetail, setMatchDetail] = useState(null);
+
+  const [matchDetailLoading, setMatchDetailLoading] = useState(false);
+
+  const [matchDetailError, setMatchDetailError] = useState("");
 
 
   // =====================================================
@@ -1148,6 +1173,120 @@ export default function App() {
 
 
   // =====================================================
+  // SMART MATCHING (MODULE 2)
+  // =====================================================
+
+  async function fetchStudentMatches() {
+
+    setMatchesLoading(true);
+
+    setMatchesError("");
+
+    try {
+
+      // GET /api/matching/students
+      const data = await getStudentMatches();
+
+      setMatches(data);
+
+    } catch (error) {
+
+      console.error(
+
+        "Fetch student matches failed:",
+
+        error
+
+      );
+
+      setMatches([]);
+
+      setMatchesError(
+
+        error.message ||
+
+        "Không thể tải kết quả Smart Matching."
+
+      );
+
+    } finally {
+
+      setMatchesLoading(false);
+
+    }
+
+  }
+
+
+  function showSmartMatching() {
+
+    setPage("smart-matching");
+
+    setError("");
+
+    setSuccess("");
+
+    setMatchDetailOpen(false);
+
+    fetchStudentMatches();
+
+  }
+
+
+  async function handleOpenMatchDetail(userId) {
+
+    setMatchDetailOpen(true);
+
+    setMatchDetailLoading(true);
+
+    setMatchDetailError("");
+
+    setMatchDetail(null);
+
+    try {
+
+      // GET /api/matching/students/{userId}
+      const data = await getStudentMatch(userId);
+
+      setMatchDetail(data);
+
+    } catch (error) {
+
+      console.error(
+
+        "Fetch match detail failed:",
+
+        error
+
+      );
+
+      setMatchDetailError(
+
+        error.message ||
+
+        "Không tìm thấy người phù hợp."
+
+      );
+
+    } finally {
+
+      setMatchDetailLoading(false);
+
+    }
+
+  }
+
+
+  function closeMatchDetail() {
+
+    setMatchDetailOpen(false);
+
+    setMatchDetail(null);
+
+  }
+
+
+  // =====================================================
   // RENDER
   // =====================================================
 
@@ -1381,7 +1520,73 @@ export default function App() {
            onViewProfile={showProfile}
            onSetupPreferences={showPreferences}
            onViewMyPosts={showMyPosts}
+           onOpenMatching={showSmartMatching}
          />
+
+       )}
+
+
+       {/* ================================================
+           TRANG SMART MATCHING
+       ================================================= */}
+
+       {page === "smart-matching" && user && (
+
+         <main className="auth-page">
+
+           <div className="auth-background-shape shape-one" />
+
+           <div className="auth-background-shape shape-two" />
+
+
+           <header className="site-header">
+
+             <div className="brand">
+
+               <span className="brand-icon">
+                 C
+               </span>
+
+               <span>
+                 Campus
+                 <span className="brand-highlight">
+                   Ecom
+                 </span>
+               </span>
+
+             </div>
+
+             <span className="header-label">
+               STUDENT COMMUNITY
+             </span>
+
+           </header>
+
+
+           <section className="pref-main">
+
+             <SmartMatching
+               matches={matches}
+               loading={matchesLoading}
+               error={matchesError}
+               detailOpen={matchDetailOpen}
+               detail={matchDetail}
+               detailLoading={matchDetailLoading}
+               detailError={matchDetailError}
+               onOpenDetail={handleOpenMatchDetail}
+               onCloseDetail={closeMatchDetail}
+               onEditPreferences={showPreferences}
+               onBack={showProfile}
+             />
+
+           </section>
+
+
+           <footer className="site-footer">
+             CampusEcomSystemMini · Student & Campus Utility
+           </footer>
+
+         </main>
 
        )}
 
@@ -1551,9 +1756,10 @@ export default function App() {
                    onLogout={handleLogout}
                    onEditProfile={showEditProfile}
                    onChangePassword={showChangePassword}
-                   onOpenPreferences={showPreferences}
-                   onViewMyPosts={showMyPosts}
-                   loading={loading}
+                    onOpenPreferences={showPreferences}
+                    onViewMyPosts={showMyPosts}
+                    onOpenMatching={showSmartMatching}
+                    loading={loading}
                    error={error}
                  />
 
