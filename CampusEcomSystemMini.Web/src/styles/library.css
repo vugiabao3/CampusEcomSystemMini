@@ -7,6 +7,22 @@
   width: 100%;
 }
 
+/* Chuyển giữa [Sàn đổi sách] và [Tài liệu số] */
+.library-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #edf0f6;
+}
+
+.library-tabs .text-button {
+  font-size: 12px;
+}
+
 .library-search {
   flex: 1 1 260px;
   max-width: 360px;
@@ -399,12 +415,242 @@
 }
 
 
+/* =====================================================
+   TÀI LIỆU SỐ — MODULE 4 / BATCH 2
+   ===================================================== */
+
+.doc-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.doc-card {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  border: 1px solid #e7ebf3;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px #20345c0a;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.doc-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 36px #20345c14;
+}
+
+.doc-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.doc-card-head-main {
+  min-width: 0;
+}
+
+.doc-card-title {
+  margin: 0 0 5px;
+  color: #17243a;
+  font-size: 15px;
+  letter-spacing: -0.3px;
+  line-height: 1.5;
+}
+
+.doc-card-author {
+  color: #8a96aa;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.doc-card-badges {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.doc-pricing {
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.doc-pricing--free {
+  color: #027a48;
+  background: #d3f8df;
+}
+
+.doc-pricing--paid {
+  color: #b54708;
+  background: #fef0c7;
+}
+
+.doc-filetype {
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+
+.doc-filetype--pdf {
+  color: #b42318;
+  background: #fee4e2;
+}
+
+.doc-filetype--docx {
+  color: #175cd3;
+  background: #dbe8fd;
+}
+
+.doc-card-subject {
+  margin: 14px 0 0;
+  color: #2459d3;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.doc-card-description {
+  margin: 12px 0 0;
+  color: #45536a;
+  font-size: 12px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.doc-card-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.doc-card-meta-item {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #edf0f6;
+  border-radius: 10px;
+}
+
+.doc-card-meta-label {
+  display: block;
+  margin-bottom: 4px;
+  color: #94a0b4;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.doc-card-meta-value {
+  display: block;
+  color: #17243a;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.doc-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+.doc-detail-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.doc-detail-meta-item {
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid #edf0f6;
+  border-radius: 12px;
+}
+
+.doc-detail-meta-value {
+  display: block;
+  color: #17243a;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.doc-detail-meta-value--file {
+  font-size: 11px;
+}
+
+.doc-form-hint {
+  margin-top: 6px;
+  color: #94a0b4;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.modal-form .form-group input[type="file"] {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px dashed #dbe3f1;
+  border-radius: 11px;
+  background: #fbfcff;
+  font-size: 12px;
+}
+
+.modal-form .form-group input[type="file"]:focus {
+  border-color: #4778e6;
+  box-shadow: 0 0 0 3px #4778e61a;
+}
+
+.modal-form .form-group input[type="number"] {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #dce3ee;
+  border-radius: 11px;
+  outline: none;
+  color: #17243a;
+  background: #fbfcff;
+  font-family: inherit;
+  font-size: 13px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.modal-form .form-group input[type="number"]:focus {
+  border-color: #4778e6;
+  box-shadow: 0 0 0 3px #4778e61a;
+  background: #ffffff;
+}
+
+.modal-form .form-group select:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+
 @media (max-width: 850px) {
   .book-list,
   .book-match-list,
   .book-detail-meta,
   .book-card-meta,
-  .book-match-meta {
+  .book-match-meta,
+  .doc-list,
+  .doc-detail-meta,
+  .doc-card-meta {
     grid-template-columns: 1fr;
   }
 

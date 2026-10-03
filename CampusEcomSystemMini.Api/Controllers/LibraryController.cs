@@ -5,6 +5,13 @@ using CampusEcomSystemMini.Application.Library.Books.GetBooks;
 using CampusEcomSystemMini.Application.Library.Books.GetExchangeMatches;
 using CampusEcomSystemMini.Application.Library.Books.GetMyBooks;
 using CampusEcomSystemMini.Application.Library.Books.UpdateBook;
+using CampusEcomSystemMini.Application.Library.Documents;
+using CampusEcomSystemMini.Application.Library.Documents.CreateDocument;
+using CampusEcomSystemMini.Application.Library.Documents.DeleteDocument;
+using CampusEcomSystemMini.Application.Library.Documents.GetDocumentById;
+using CampusEcomSystemMini.Application.Library.Documents.GetDocuments;
+using CampusEcomSystemMini.Application.Library.Documents.GetMyDocuments;
+using CampusEcomSystemMini.Application.Library.Documents.UpdateDocument;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,7 +19,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace CampusEcomSystemMini.Api.Controllers;
 
 [ApiController]
-[Route("api/library/books")]
+[Route("api/library")]
 [Authorize]
 public class LibraryController : ControllerBase
 {
@@ -23,8 +30,12 @@ public class LibraryController : ControllerBase
         _mediator = mediator;
     }
 
+    // =====================================================
+    // BOOK EXCHANGE (MODULE 4 / BATCH 1)
+    // =====================================================
+
     // GET /api/library/books?search=...&status=...
-    [HttpGet]
+    [HttpGet("books")]
     public async Task<ActionResult<List<GetBooksResponse>>> GetBooks(
         [FromQuery] GetBooksQuery query,
         CancellationToken cancellationToken)
@@ -37,7 +48,7 @@ public class LibraryController : ControllerBase
     }
 
     // GET /api/library/books/me
-    [HttpGet("me")]
+    [HttpGet("books/me")]
     public async Task<ActionResult<List<GetMyBooksResponse>>> GetMyBooks(
         CancellationToken cancellationToken)
     {
@@ -49,7 +60,7 @@ public class LibraryController : ControllerBase
     }
 
     // GET /api/library/books/exchange-matches
-    [HttpGet("exchange-matches")]
+    [HttpGet("books/exchange-matches")]
     public async Task<ActionResult<List<GetExchangeMatchesResponse>>> GetExchangeMatches(
         CancellationToken cancellationToken)
     {
@@ -61,7 +72,7 @@ public class LibraryController : ControllerBase
     }
 
     // GET /api/library/books/{id}
-    [HttpGet("{id:guid}")]
+    [HttpGet("books/{id:guid}")]
     public async Task<ActionResult<GetBookByIdResponse>> GetBookById(
         Guid id,
         CancellationToken cancellationToken)
@@ -79,7 +90,7 @@ public class LibraryController : ControllerBase
     }
 
     // POST /api/library/books
-    [HttpPost]
+    [HttpPost("books")]
     public async Task<ActionResult<CreateBookResponse>> CreateBook(
         CreateBookCommand command,
         CancellationToken cancellationToken)
@@ -94,7 +105,7 @@ public class LibraryController : ControllerBase
     }
 
     // PUT /api/library/books/{id}
-    [HttpPut("{id:guid}")]
+    [HttpPut("books/{id:guid}")]
     public async Task<ActionResult<UpdateBookResponse>> UpdateBook(
         Guid id,
         UpdateBookCommand command,
@@ -120,7 +131,7 @@ public class LibraryController : ControllerBase
     }
 
     // DELETE /api/library/books/{id}
-    [HttpDelete("{id:guid}")]
+    [HttpDelete("books/{id:guid}")]
     public async Task<ActionResult<DeleteBookResponse>> DeleteBook(
         Guid id,
         CancellationToken cancellationToken)
@@ -137,6 +148,148 @@ public class LibraryController : ControllerBase
 
             // Không cho xóa bài đăng của người dùng khác.
             case DeleteBookOutcome.NotOwner:
+                return Forbid();
+
+            default:
+                return Ok(result.Response);
+        }
+    }
+
+    // =====================================================
+    // DOCUMENTS (MODULE 4 / BATCH 2)
+    // =====================================================
+
+    // GET /api/library/documents?search=...&subject=...&pricing=...
+    [HttpGet("documents")]
+    public async Task<ActionResult<List<GetDocumentsResponse>>> GetDocuments(
+        [FromQuery] GetDocumentsQuery query,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(
+            query,
+            cancellationToken);
+
+        return Ok(result);
+    }
+
+    // GET /api/library/documents/me
+    [HttpGet("documents/me")]
+    public async Task<ActionResult<List<GetMyDocumentsResponse>>> GetMyDocuments(
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(
+            new GetMyDocumentsQuery(),
+            cancellationToken);
+
+        return Ok(result);
+    }
+
+    // GET /api/library/documents/{id}
+    [HttpGet("documents/{id:guid}")]
+    public async Task<ActionResult<GetDocumentByIdResponse>> GetDocumentById(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(
+            new GetDocumentByIdQuery(id),
+            cancellationToken);
+
+        if (result is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(result);
+    }
+
+    // POST /api/library/documents  (multipart/form-data)
+    //
+    // File được map sang DocumentUpload ở Controller
+    // để Application không phụ thuộc ASP.NET Core.
+    [HttpPost("documents")]
+    public async Task<ActionResult<CreateDocumentResponse>> CreateDocument(
+        [FromForm] CreateDocumentCommand command,
+        IFormFile? file,
+        CancellationToken cancellationToken)
+    {
+        var upload = file is null
+            ? null
+            : new DocumentUpload(
+                file.FileName,
+                file.Length,
+                file.OpenReadStream());
+
+        var result = await _mediator.Send(
+            command with { File = upload },
+            cancellationToken);
+
+        switch (result.Outcome)
+        {
+            // Thiếu Pricing hoặc giá điểm không hợp lệ.
+            case CreateDocumentOutcome.InvalidInput:
+                return BadRequest(result.ErrorMessage);
+
+            // File không hợp lệ về extension, kích thước hoặc nội dung.
+            case CreateDocumentOutcome.InvalidFile:
+                return BadRequest(result.ErrorMessage);
+
+            default:
+                return Created(
+                    $"/api/library/documents/{result.Response!.Id}",
+                    result.Response);
+        }
+    }
+
+    // PUT /api/library/documents/{id}
+    //
+    // Chỉ sửa metadata, không thay file gốc.
+    [HttpPut("documents/{id:guid}")]
+    public async Task<ActionResult<UpdateDocumentResponse>> UpdateDocument(
+        Guid id,
+        UpdateDocumentCommand command,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(
+            command with { Id = id },
+            cancellationToken);
+
+        switch (result.Outcome)
+        {
+            // Tài liệu không tồn tại.
+            case UpdateDocumentOutcome.NotFound:
+                return NotFound();
+
+            // Không cho sửa tài liệu của người dùng khác.
+            case UpdateDocumentOutcome.NotOwner:
+                return Forbid();
+
+            // Tài liệu trả phí phải có giá điểm.
+            case UpdateDocumentOutcome.InvalidInput:
+                return BadRequest(result.ErrorMessage);
+
+            default:
+                return Ok(result.Response);
+        }
+    }
+
+    // DELETE /api/library/documents/{id}
+    [HttpDelete("documents/{id:guid}")]
+    public async Task<ActionResult<DeleteDocumentResponse>> DeleteDocument(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(
+            new DeleteDocumentCommand(id),
+            cancellationToken);
+
+        switch (result.Outcome)
+        {
+            // Tài liệu không tồn tại.
+            case DeleteDocumentOutcome.NotFound:
+                return NotFound();
+
+            // Không cho xóa tài liệu của người dùng khác.
+            case DeleteDocumentOutcome.NotOwner:
                 return Forbid();
 
             default:

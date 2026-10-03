@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using CampusEcomSystemMini.Infrastructure.Services;
+using CampusEcomSystemMini.Infrastructure.Services.Document;
  
 namespace CampusEcomSystemMini.Infrastructure;
 
@@ -54,6 +55,19 @@ public static class DependencyInjection
         services.AddScoped<
             IBookExchangeRepository,
             BookExchangeRepository>();
+
+        // Documents (Module 4 / BATCH 2)
+        services.AddScoped<
+            IDocumentRepository,
+            DocumentRepository>();
+
+        services.AddScoped<
+            IDocumentStorage,
+            LocalDocumentStorage>();
+
+        services.AddScoped<
+            IDocumentFileValidator,
+            DocumentFileValidator>();
 
         services.AddScoped<
             IPasswordHasher,

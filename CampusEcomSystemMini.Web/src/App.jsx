@@ -77,6 +77,12 @@ import {
   updateBook,
   deleteBook,
   getExchangeMatches,
+  getDocuments,
+  getMyDocuments,
+  getDocumentById,
+  createDocument,
+  updateDocument,
+  deleteDocument,
 } from "./services/libraryService";
 
 import "./styles/auth.css";
@@ -239,14 +245,16 @@ export default function App() {
 
   const [claimsError, setClaimsError] = useState("");
 
-<<<<<<< Updated upstream
-  // Yêu cầu đang được duyệt / từ chối, hoặc "returned"
+// Yêu cầu đang được duyệt / từ chối, hoặc "returned"
   // khi chủ bài đăng xác nhận đã trả đồ.
   const [claimsActionId, setClaimsActionId] = useState(null);
-=======
+
   // =====================================================
-  // KHO TÀI LIỆU & SÁCH — MODULE 4 / BATCH 1
+  // KHO TÀI LIỆU & SÁCH — MODULE 4
   // =====================================================
+
+  // "books" hoặc "documents"
+  const [librarySection, setLibrarySection] = useState("books");
 
   // "all" = GET /api/library/books, "mine" = GET /api/library/books/me
   const [libraryMode, setLibraryMode] = useState("all");
@@ -285,7 +293,43 @@ export default function App() {
   const [bookMatchesLoading, setBookMatchesLoading] = useState(false);
 
   const [bookMatchesError, setBookMatchesError] = useState("");
->>>>>>> Stashed changes
+
+  // =====================================================
+  // TÀI LIỆU SỐ — MODULE 4 / BATCH 2
+  // =====================================================
+
+  // "all" | "free" | "paid" = GET /api/library/documents
+  // "mine" = GET /api/library/documents/me
+  const [documentMode, setDocumentMode] = useState("all");
+
+  const [documents, setDocuments] = useState([]);
+
+  const [documentsLoading, setDocumentsLoading] = useState(false);
+
+  const [documentsSaving, setDocumentsSaving] = useState(false);
+
+  const [documentsError, setDocumentsError] = useState("");
+
+  const [documentsSuccess, setDocumentsSuccess] = useState("");
+
+  // Bộ lọc GET /api/library/documents?search=...&subject=...&pricing=...
+  const [documentFilters, setDocumentFilters] = useState({
+    search: "",
+    subject: "",
+    pricing: "",
+  });
+
+  const [documentFormOpen, setDocumentFormOpen] = useState(false);
+
+  const [editingDocument, setEditingDocument] = useState(null);
+
+  const [documentDetailOpen, setDocumentDetailOpen] = useState(false);
+
+  const [documentDetail, setDocumentDetail] = useState(null);
+
+  const [documentDetailLoading, setDocumentDetailLoading] = useState(false);
+
+  const [documentDetailError, setDocumentDetailError] = useState("");
 
 
   // =====================================================
@@ -2272,13 +2316,52 @@ export default function App() {
 
     setBooksSuccess("");
 
+    setDocumentsSuccess("");
+
     setBookFormOpen(false);
 
     setBookDetailOpen(false);
 
+    setDocumentFormOpen(false);
+
+    setDocumentDetailOpen(false);
+
     fetchBooks(libraryMode);
 
     fetchBookMatches();
+
+    fetchDocuments(documentMode);
+
+  }
+
+
+  // Chuyển giữa sàn đổi sách và kho tài liệu số.
+  function handleChangeLibrarySection(section) {
+
+    const targetSection = section === "documents"
+      ? "documents"
+      : "books";
+
+    setLibrarySection(targetSection);
+
+    setBooksSuccess("");
+
+    setDocumentsSuccess("");
+
+    setBookFormOpen(false);
+
+    setBookDetailOpen(false);
+
+    setDocumentFormOpen(false);
+
+    setDocumentDetailOpen(false);
+
+    if (targetSection === "documents") {
+      fetchDocuments(documentMode);
+    } else {
+      fetchBooks(libraryMode);
+      fetchBookMatches();
+    }
 
   }
 
@@ -2542,6 +2625,348 @@ export default function App() {
     setBookDetailOpen(false);
 
     setBookDetail(null);
+
+  }
+
+
+  // =====================================================
+  // TÀI LIỆU SỐ (MODULE 4 / BATCH 2)
+  // =====================================================
+
+  async function fetchDocuments(mode, filters) {
+
+    setDocumentsLoading(true);
+
+    setDocumentsError("");
+
+    const activeFilters = filters ?? documentFilters;
+
+    try {
+
+      // "mine" = GET /api/library/documents/me
+      // "free" | "paid" = GET /api/library/documents?pricing=...
+      // "all" = GET /api/library/documents (có search / subject / pricing)
+      const targetMode = mode || "all";
+
+      let data;
+
+      if (targetMode === "mine") {
+
+        data = await getMyDocuments();
+
+      } else {
+
+        data = await getDocuments({
+          ...activeFilters,
+
+          pricing:
+            targetMode === "free"
+              ? "Free"
+              : targetMode === "paid"
+                ? "Paid"
+                : activeFilters.pricing,
+        });
+
+      }
+
+      setDocuments(data);
+
+    } catch (error) {
+
+      console.error(
+
+        "Fetch documents failed:",
+
+        error
+
+      );
+
+      setDocuments([]);
+
+      setDocumentsError(
+
+        error.message ||
+
+        "Không thể tải kho tài liệu."
+
+      );
+
+    } finally {
+
+      setDocumentsLoading(false);
+
+    }
+
+  }
+
+
+  // Chuyển giữa tất cả / miễn phí / trả phí / của tôi.
+  function handleChangeDocumentMode(mode) {
+
+    const targetMode = mode || "all";
+
+    setDocumentMode(targetMode);
+
+    setDocumentsSuccess("");
+
+    setDocumentFormOpen(false);
+
+    setDocumentDetailOpen(false);
+
+    fetchDocuments(targetMode);
+
+  }
+
+
+  // Bộ lọc chỉ áp dụng cho GET /api/library/documents.
+  function handleDocumentFilterChange(nextFilters) {
+
+    const filters = {
+
+      search: nextFilters.search ?? "",
+
+      subject: nextFilters.subject ?? "",
+
+      pricing: nextFilters.pricing ?? "",
+
+    };
+
+    setDocumentFilters(filters);
+
+    setDocumentsSuccess("");
+
+    if (documentMode === "mine") {
+      return;
+    }
+
+    // pricing đã được chọn qua chip Tài liệu nên
+    // đặt lại về rỗng để không lọc trùng hai lần.
+    if (filters.pricing) {
+      setDocumentMode("all");
+      fetchDocuments("all", {
+        ...filters,
+        pricing: "",
+      });
+      return;
+    }
+
+    fetchDocuments(documentMode, filters);
+
+  }
+
+
+  function handleResetDocumentFilters() {
+
+    const filters = {
+
+      search: "",
+
+      subject: "",
+
+      pricing: "",
+
+    };
+
+    setDocumentFilters(filters);
+
+    setDocumentsSuccess("");
+
+    fetchDocuments(documentMode, filters);
+
+  }
+
+
+  function openDocumentForm(document) {
+
+    setEditingDocument(document || null);
+
+    setDocumentFormOpen(true);
+
+    setDocumentsError("");
+
+    setDocumentsSuccess("");
+
+    setDocumentDetailOpen(false);
+
+  }
+
+
+  function closeDocumentForm() {
+
+    setDocumentFormOpen(false);
+
+    setEditingDocument(null);
+
+  }
+
+
+  async function handleSubmitDocument(formData) {
+
+    setDocumentsSaving(true);
+
+    setDocumentsError("");
+
+    setDocumentsSuccess("");
+
+    try {
+
+      if (editingDocument) {
+
+        // PUT /api/library/documents/{id}  — chỉ sửa metadata.
+        await updateDocument(editingDocument.id, formData);
+
+        setDocumentsSuccess("Tài liệu đã được cập nhật.");
+
+      } else {
+
+        // POST /api/library/documents  — multipart/form-data.
+        await createDocument(formData);
+
+        setDocumentsSuccess("Tài liệu đã được đăng tải.");
+
+      }
+
+      closeDocumentForm();
+
+      await fetchDocuments(documentMode);
+
+    } catch (error) {
+
+      console.error(
+
+        "Save document error:",
+
+        error
+
+      );
+
+      setDocumentsError(getDocumentErrorMessage(error));
+
+    } finally {
+
+      setDocumentsSaving(false);
+
+    }
+
+  }
+
+
+  async function handleDeleteDocument(document) {
+
+    const confirmed = window.confirm(
+      "Xóa tài liệu này? File tải lên cũng sẽ bị xóa và không thể khôi phục."
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDocumentsSaving(true);
+
+    setDocumentsError("");
+
+    setDocumentsSuccess("");
+
+    try {
+
+      // DELETE /api/library/documents/{id}
+      await deleteDocument(document.id);
+
+      setDocumentDetailOpen(false);
+
+      setDocumentsSuccess("Tài liệu đã được xóa.");
+
+      await fetchDocuments(documentMode);
+
+    } catch (error) {
+
+      console.error(
+
+        "Delete document error:",
+
+        error
+
+      );
+
+      setDocumentsError(getDocumentErrorMessage(error));
+
+    } finally {
+
+      setDocumentsSaving(false);
+
+    }
+
+  }
+
+
+  function getDocumentErrorMessage(error) {
+
+    if (error.status === 403) {
+      return "Bạn không phải chủ của tài liệu này.";
+    }
+
+    if (error.status === 404) {
+      return "Không tìm thấy tài liệu.";
+    }
+
+    // Backend trả về nguyên nhân cụ thể cho file lỗi.
+    if (error.status === 400) {
+      return (
+        error.message ||
+
+        "Tài liệu không hợp lệ, vui lòng kiểm tra lại file."
+      );
+    }
+
+    return error.message || "Thao tác với tài liệu thất bại.";
+  }
+
+
+  async function handleOpenDocumentDetail(documentId) {
+
+    setDocumentDetailOpen(true);
+
+    setDocumentDetailLoading(true);
+
+    setDocumentDetailError("");
+
+    setDocumentDetail(null);
+
+    setDocumentFormOpen(false);
+
+    try {
+
+      // GET /api/library/documents/{id}
+      const data = await getDocumentById(documentId);
+
+      setDocumentDetail(data);
+
+    } catch (error) {
+
+      console.error(
+
+        "Fetch document detail failed:",
+
+        error
+
+      );
+
+      setDocumentDetailError(getDocumentErrorMessage(error));
+
+    } finally {
+
+      setDocumentDetailLoading(false);
+
+    }
+
+  }
+
+
+  function closeDocumentDetail() {
+
+    setDocumentDetailOpen(false);
+
+    setDocumentDetail(null);
 
   }
 
@@ -2930,7 +3355,6 @@ onEditPreferences={showPreferences}
                success={lostFoundSuccess}
                onSubmitClaim={handleSubmitClaim}
                onCloseClaim={closeClaim}
-<<<<<<< Updated upstream
 claimsItem={claimsItem}
                 claims={claims}
                 claimsLoading={claimsLoading}
@@ -2942,17 +3366,7 @@ claimsItem={claimsItem}
                 onRejectClaim={handleRejectClaim}
                 onMarkReturned={handleMarkReturned}
                 onBack={showProfile}
-             />
-=======
-               claimsItem={claimsItem}
-               claims={claims}
-               claimsLoading={claimsLoading}
-               claimsError={claimsError}
-               onOpenClaims={handleOpenClaims}
-               onCloseClaims={closeClaims}
-onBack={showProfile}
               />
->>>>>>> Stashed changes
 
             </section>
 
@@ -3006,35 +3420,78 @@ onBack={showProfile}
             <section className="pref-main">
 
               <LibraryPage
-                mode={libraryMode}
-                onChangeMode={handleChangeLibraryMode}
-                books={books}
-                user={user}
-                loading={booksLoading}
-                saving={booksSaving}
-                error={booksError}
-                success={booksSuccess}
-                filters={bookFilters}
-                onFilterChange={handleBookFilterChange}
-                onResetFilters={handleResetBookFilters}
-                onCreate={() => openBookForm(null)}
-                onEdit={openBookForm}
-                onDelete={handleDeleteBook}
-                onSubmitBook={handleSubmitBook}
-                onOpenDetail={(book) => handleOpenBookDetail(book.id)}
-                onCloseForm={closeBookForm}
-                onCloseDetail={closeBookDetail}
-                formOpen={bookFormOpen}
-                formBook={editingBook}
-                detailOpen={bookDetailOpen}
-                detail={bookDetail}
-                detailLoading={bookDetailLoading}
-                detailError={bookDetailError}
-                matches={bookMatches}
-                matchesLoading={bookMatchesLoading}
-                matchesError={bookMatchesError}
-                onOpenMatch={handleOpenBookMatch}
+                section={librarySection}
+                onChangeSection={handleChangeLibrarySection}
+                count={
+                  librarySection === "documents"
+                    ? documents.length
+                    : books.length
+                }
+                success={
+                  librarySection === "documents"
+                    ? documentsSuccess
+                    : booksSuccess
+                }
+                onCreate={() =>
+                  librarySection === "documents"
+                    ? openDocumentForm(null)
+                    : openBookForm(null)
+                }
                 onBack={showProfile}
+                bookExchange={{
+                  mode: libraryMode,
+                  onChangeMode: handleChangeLibraryMode,
+                  books,
+                  user,
+                  loading: booksLoading,
+                  saving: booksSaving,
+                  error: booksError,
+                  filters: bookFilters,
+                  onFilterChange: handleBookFilterChange,
+                  onResetFilters: handleResetBookFilters,
+                  onEdit: openBookForm,
+                  onDelete: handleDeleteBook,
+                  onSubmitBook: handleSubmitBook,
+                  onOpenDetail: (book) =>
+                    handleOpenBookDetail(book.id),
+                  onCloseForm: closeBookForm,
+                  onCloseDetail: closeBookDetail,
+                  formOpen: bookFormOpen,
+                  formBook: editingBook,
+                  detailOpen: bookDetailOpen,
+                  detail: bookDetail,
+                  detailLoading: bookDetailLoading,
+                  detailError: bookDetailError,
+                  matches: bookMatches,
+                  matchesLoading: bookMatchesLoading,
+                  matchesError: bookMatchesError,
+                  onOpenMatch: handleOpenBookMatch,
+                }}
+                documentPanel={{
+                  mode: documentMode,
+                  onChangeMode: handleChangeDocumentMode,
+                  documents,
+                  user,
+                  loading: documentsLoading,
+                  saving: documentsSaving,
+                  error: documentsError,
+                  filters: documentFilters,
+                  onFilterChange: handleDocumentFilterChange,
+                  onResetFilters: handleResetDocumentFilters,
+                  onEdit: openDocumentForm,
+                  onDelete: handleDeleteDocument,
+                  onSubmitDocument: handleSubmitDocument,
+                  onOpenDetail: (document) =>
+                    handleOpenDocumentDetail(document.id),
+                  onCloseForm: closeDocumentForm,
+                  onCloseDetail: closeDocumentDetail,
+                  formOpen: documentFormOpen,
+                  formDocument: editingDocument,
+                  detailOpen: documentDetailOpen,
+                  detail: documentDetail,
+                  detailLoading: documentDetailLoading,
+                  detailError: documentDetailError,
+                }}
               />
 
             </section>
