@@ -6,7 +6,8 @@ export default function HomePage({
   onViewMyPosts,
   onOpenMatching,
   onOpenLostFound,
-  onOpenMessenger,
+<  onOpenMessenger,
+  onOpenLibrary,
 }) {
   const fullName =
     user?.fullName ??
@@ -246,14 +247,23 @@ export default function HomePage({
               </button>
             </div>
 
-            <div className="module-card">
+            <div className="module-card module-card--active">
               <span>03</span>
               <h3>
                 Academic Library
               </h3>
               <p>
-                Chia sẻ tài liệu và giáo trình.
+                Đổi sách giáo trình và
+                chia sẻ tài liệu.
               </p>
+
+              <button
+                className="module-card-action"
+                type="button"
+                onClick={onOpenLibrary}
+              >
+                Sàn đổi sách
+              </button>
             </div>
 
             <div className="module-card">
