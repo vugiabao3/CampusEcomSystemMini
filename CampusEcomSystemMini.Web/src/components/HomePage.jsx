@@ -6,6 +6,7 @@ export default function HomePage({
   onViewMyPosts,
   onOpenMatching,
   onOpenLostFound,
+<  onOpenMessenger,
   onOpenLibrary,
 }) {
   const fullName =
@@ -179,7 +180,10 @@ export default function HomePage({
               những sinh viên khác.
             </p>
 
-            <button>
+            <button
+              type="button"
+              onClick={onOpenMessenger}
+            >
               Mở Messenger
             </button>
 

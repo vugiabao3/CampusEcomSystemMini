@@ -2,7 +2,7 @@
 //logic ghép các COMPONENTS lại với nhauuuuu
 
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import LoginForm from "./components/LoginForm";
 import RegisterForm from "./components/RegisterForm";
@@ -14,6 +14,8 @@ import Preferences from "./components/Preferences";
 import PostsPage from "./components/PostsPage";
 import SmartMatching from "./components/SmartMatching";
 import LostFoundPage from "./components/LostFoundPage";
+import ConnectionRequests from "./components/ConnectionRequests";
+import MessengerPage from "./components/messenger/MessengerPage.jsx";
 import LibraryPage from "./components/library/LibraryPage";
 
 import {
@@ -70,6 +72,28 @@ import {
 } from "./services/lostFoundService";
 
 import {
+  sendConnectionRequest,
+  getConnectionRequests,
+  acceptConnectionRequest,
+  rejectConnectionRequest,
+} from "./services/connectionService";
+
+import {
+  getConversations,
+  getConversation,
+  getConversationMessages,
+} from "./services/conversationService.js";
+
+import { createChatConnection } from "./hubs/chatHub.js";
+
+import {
+  getNotifications,
+  getUnreadNotifications,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+} from "./services/notificationService.js";
+
+import {
   getBooks,
   getMyBooks,
   getBookById,
@@ -96,6 +120,7 @@ import "./styles/preferences.css";
 import "./styles/posts.css";
 import "./styles/matching.css";
 import "./styles/lostFound.css";
+import "./styles/messenger.css";
 import "./styles/library.css";
 
 export default function App() {
@@ -256,6 +281,95 @@ export default function App() {
   const [claimsActionId, setClaimsActionId] = useState(null);
 
   // =====================================================
+  // CONNECTION REQUESTS (MODULE 5 / BATCH 1)
+  // =====================================================
+
+  // Tab: "received" (nhận được) | "sent" (đã gửi)
+  const [connectionMode, setConnectionMode] = useState("received");
+
+  const [connectionRequests, setConnectionRequests] = useState([]);
+
+  const [connectionLoading, setConnectionLoading] = useState(false);
+
+  const [connectionError, setConnectionError] = useState("");
+
+  const [connectionSuccess, setConnectionSuccess] = useState("");
+
+  // Yêu cầu đang được chấp nhận / từ chối
+  const [connectionActionId, setConnectionActionId] = useState(null);
+
+  // Form gửi yêu cầu kết nối
+  const [receiverId, setReceiverId] = useState("");
+
+  const [sending, setSending] = useState(false);
+
+  const [sendError, setSendError] = useState("");
+
+  // =====================================================
+  // MESSENGER (MODULE 5 / BATCH 2)
+  // =====================================================
+
+  const [conversations, setConversations] = useState([]);
+
+  const [conversationsLoading, setConversationsLoading] = useState(false);
+
+  const [conversationsError, setConversationsError] = useState("");
+
+  // Cuộc trò chuyện đang được chọn trong Messenger
+  const [selectedConversation, setSelectedConversation] = useState(null);
+
+  const [selectedConversationId, setSelectedConversationId] = useState(null);
+
+  // Chi tiết cuộc trò chuyện (participant)
+  const [conversationDetail, setConversationDetail] = useState(null);
+
+  const [conversationDetailLoading, setConversationDetailLoading] =
+    useState(false);
+
+  const [conversationDetailError, setConversationDetailError] =
+    useState("");
+
+  // Lịch sử tin nhắn của cuộc trò chuyện đang chọn
+  const [messages, setMessages] = useState([]);
+
+  const [messagesLoading, setMessagesLoading] = useState(false);
+
+  const [messagesError, setMessagesError] = useState("");
+
+  // =====================================================
+  // SIGNALR REALTIME CHAT (MODULE 5 / BATCH 3)
+  // =====================================================
+
+  // Kết nối SignalR đến /hubs/chat.
+  const [chatConnection, setChatConnection] = useState(null);
+
+  const [chatConnected, setChatConnected] = useState(false);
+
+  const [sendingMessage, setSendingMessage] = useState(false);
+
+  // =====================================================
+  // NOTIFICATIONS (MODULE 5 / BATCH 4)
+  // =====================================================
+
+  const [notifications, setNotifications] = useState([]);
+
+  const [notificationsLoading, setNotificationsLoading] =
+    useState(false);
+
+  const [notificationsError, setNotificationsError] =
+    useState("");
+
+  // Unread count cho Notification Bell.
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const [notificationsOpen, setNotificationsOpen] =
+    useState(false);
+
+  // Thông báo đang được đánh dấu đã đọc.
+  const [notificationActionId, setNotificationActionId] =
+    useState(null);
+
+  // =====================================================
   // KHO TÀI LIỆU & SÁCH — MODULE 4
   // =====================================================
 
@@ -413,6 +527,12 @@ export default function App() {
 
         setUser(null);
 
+        // Đặt lại trạng thái notification
+        // khi restore login thất bại.
+        setNotifications([]);
+        setUnreadCount(0);
+        setNotificationsOpen(false);
+
         setPage("login");
 
       } finally {
@@ -425,6 +545,88 @@ export default function App() {
     restoreLogin();
 
   }, []);
+
+
+  // =====================================================
+  // SIGNALR /hubs/chat — KẾT NỐI THEO LOGIN / LOGOUT
+  // (MODULE_5 / BATCH 3)
+  // =====================================================
+
+  // Ref luôn trỏ đến cuộc trò chuyện đang chọn,
+  // để handler SignalR không dùng closure cũ.
+  const selectedConversationIdRef = useRef(null);
+
+  useEffect(() => {
+    selectedConversationIdRef.current = selectedConversationId;
+  }, [selectedConversationId]);
+
+  // Ref luôn trỏ đến phiên bản mới nhất của
+  // handler nhận tin nhắn realtime.
+  const receiveMessageRef = useRef(null);
+
+  useEffect(() => {
+    receiveMessageRef.current = handleReceiveMessage;
+  });
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    let cancelled = false;
+
+    // Tạo kết nối SignalR. JWT được gửi qua
+    // accessTokenFactory (query string access_token).
+    const connection = createChatConnection(
+      (message) => {
+        receiveMessageRef.current?.(message);
+      }
+    );
+
+    setChatConnection(connection);
+
+    connection
+      .start()
+      .then(() => {
+        if (!cancelled) {
+          setChatConnected(true);
+        }
+      })
+      .catch((error) => {
+        console.error("Chat connect failed:", error);
+
+        if (!cancelled) {
+          setChatConnected(false);
+        }
+      });
+
+    // Logout / chuyển user → dừng HubConnection.
+    return () => {
+      cancelled = true;
+
+      setChatConnected(false);
+
+      setChatConnection(null);
+
+      connection.stop().catch((error) => {
+        console.error("Chat stop failed:", error);
+      });
+    };
+  }, [user]);
+
+
+  // =====================================================
+  // UNREAD NOTIFICATION COUNT KHI ĐĂNG NHẬP / REFRESH
+  // (MODULE_5 / BATCH 4)
+  // =====================================================
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    fetchUnreadNotifications();
+  }, [user]);
 
 
   // =====================================================
@@ -475,12 +677,18 @@ export default function App() {
         error
       );
 
-      setUser(null);
+        setUser(null);
 
-      setError(
-        error.message ||
-        "Đăng nhập thất bại."
-      );
+        // Đặt lại trạng thái notification
+        // khi đăng nhập thất bại.
+        setNotifications([]);
+        setUnreadCount(0);
+        setNotificationsOpen(false);
+
+        setError(
+          error.message ||
+          "Đăng nhập thất bại."
+        );
 
     } finally {
 
@@ -563,6 +771,11 @@ export default function App() {
 
       // Xóa user khỏi React
       setUser(null);
+
+      // Dừng chuông thông báo khi đăng xuất.
+      setNotifications([]);
+      setUnreadCount(0);
+      setNotificationsOpen(false);
 
       // Quay lại Login
       setPage("login");
@@ -2256,9 +2469,514 @@ export default function App() {
   }
 
 
+   // =====================================================
+  // CONNECTION REQUESTS (MODULE 5 / BATCH 1)
+  // =====================================================
+
+  // Backend là nguồn sự thật: sau mỗi thao tác,
+  // danh sách yêu cầu được tải lại từ API.
+  async function fetchConnectionRequests() {
+    setConnectionLoading(true);
+    setConnectionError("");
+
+    try {
+      // GET /api/connections/requests
+      const data = await getConnectionRequests();
+
+      setConnectionRequests(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Fetch connection requests failed:", error);
+
+      setConnectionRequests([]);
+
+      setConnectionError(
+        error.message || "Không thể tải yêu cầu kết nối."
+      );
+    } finally {
+      setConnectionLoading(false);
+    }
+  }
+
+  function showConnections() {
+    setPage("connections");
+
+    setError("");
+    setSuccess("");
+
+    setConnectionMode("received");
+    setConnectionSuccess("");
+    setConnectionError("");
+    setSendError("");
+    setReceiverId("");
+
+    fetchConnectionRequests();
+  }
+
+  function handleConnectionModeChange(mode) {
+    setConnectionMode(mode);
+    setConnectionSuccess("");
+    setConnectionError("");
+  }
+
+  function getConnectionErrorMessage(error) {
+    if (error.status === 400) {
+      return "Không thể gửi yêu cầu kết nối cho chính mình.";
+    }
+
+    if (error.status === 404) {
+      return "Người nhận không tồn tại.";
+    }
+
+    if (error.status === 409) {
+      return "Đã có yêu cầu kết nối đang chờ với người này.";
+    }
+
+    return error.message || "Không thể gửi yêu cầu kết nối.";
+  }
+
+  async function handleSendConnectionRequest(targetReceiverId) {
+    const trimmed = String(targetReceiverId ?? "").trim();
+
+    if (!trimmed) {
+      return;
+    }
+
+    setSending(true);
+    setSendError("");
+    setConnectionSuccess("");
+
+    try {
+      // POST /api/connections/requests
+      const data = await sendConnectionRequest(trimmed);
+
+      setReceiverId("");
+
+      setConnectionSuccess(
+        `Đã gửi yêu cầu kết nối đến ${
+          data?.receiverName ?? "người nhận"
+        }.`
+      );
+
+      await fetchConnectionRequests();
+    } catch (error) {
+      console.error("Send connection request failed:", error);
+
+      setSendError(getConnectionErrorMessage(error));
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function handleAcceptConnectionRequest(request) {
+    const connectionRequestId = request?.connectionRequestId;
+
+    if (!connectionRequestId) {
+      return;
+    }
+
+    setConnectionActionId(connectionRequestId);
+    setConnectionError("");
+    setConnectionSuccess("");
+
+    try {
+      // PUT /api/connections/requests/{id}/accept
+      await acceptConnectionRequest(connectionRequestId);
+
+      setConnectionSuccess(
+        `Đã đồng ý kết nối với ${
+          request?.senderName ?? "người gửi"
+        }.`
+      );
+
+      await fetchConnectionRequests();
+    } catch (error) {
+      console.error("Accept connection request failed:", error);
+
+      setConnectionError(
+        getConnectionActionErrorMessage(error)
+      );
+    } finally {
+      setConnectionActionId(null);
+    }
+  }
+
+  async function handleRejectConnectionRequest(request) {
+    const connectionRequestId = request?.connectionRequestId;
+
+    if (!connectionRequestId) {
+      return;
+    }
+
+    setConnectionActionId(connectionRequestId);
+    setConnectionError("");
+    setConnectionSuccess("");
+
+    try {
+      // PUT /api/connections/requests/{id}/reject
+      await rejectConnectionRequest(connectionRequestId);
+
+      setConnectionSuccess(
+        `Đã từ chối yêu cầu kết nối từ ${
+          request?.senderName ?? "người gửi"
+        }.`
+      );
+
+      await fetchConnectionRequests();
+    } catch (error) {
+      console.error("Reject connection request failed:", error);
+
+      setConnectionError(
+        getConnectionActionErrorMessage(error)
+      );
+    } finally {
+      setConnectionActionId(null);
+    }
+  }
+
+  function getConnectionActionErrorMessage(error) {
+    if (error.status === 403) {
+      return "Chỉ người nhận yêu cầu mới được thực hiện thao tác này.";
+    }
+
+    if (error.status === 404) {
+      return "Yêu cầu kết nối không tồn tại.";
+    }
+
+    if (error.status === 409) {
+      return "Yêu cầu này không còn ở trạng thái chờ.";
+    }
+
+    return error.message || "Không thể xử lý yêu cầu kết nối.";
+  }
+
+  // =====================================================
+  // MESSENGER (MODULE 5 / BATCH 2)
+  // =====================================================
+
+  async function fetchConversations() {
+    setConversationsLoading(true);
+    setConversationsError("");
+
+    try {
+      // GET /api/conversations
+      const data = await getConversations();
+
+      setConversations(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Fetch conversations failed:", error);
+
+      setConversations([]);
+
+      setConversationsError(
+        error.message ||
+          "Không thể tải danh sách cuộc trò chuyện."
+      );
+    } finally {
+      setConversationsLoading(false);
+    }
+  }
+
+  function showMessenger() {
+    setPage("messenger");
+
+    setError("");
+    setSuccess("");
+
+    setSelectedConversation(null);
+    setSelectedConversationId(null);
+    setConversationDetail(null);
+    setConversationDetailError("");
+    setMessages([]);
+    setMessagesError("");
+
+    fetchConversations();
+  }
+
+  // Chọn cuộc trò chuyện: tải chi tiết (participant)
+  // và lịch sử tin nhắn từ Backend.
+  async function handleSelectConversation(conversation) {
+    const conversationId = conversation?.conversationId;
+
+    if (!conversationId) {
+      return;
+    }
+
+    setSelectedConversation(conversation);
+    setSelectedConversationId(conversationId);
+
+    setConversationDetail(null);
+    setConversationDetailError("");
+
+    setMessages([]);
+    setMessagesError("");
+
+    setConversationDetailLoading(true);
+    setMessagesLoading(true);
+
+    try {
+      // GET /api/conversations/{id}
+      const detail = await getConversation(conversationId);
+
+      setConversationDetail(detail);
+    } catch (error) {
+      console.error(
+        "Fetch conversation detail failed:",
+        error
+      );
+
+      setConversationDetail(null);
+
+      setConversationDetailError(
+        error.status === 403
+          ? "Bạn không phải participant của cuộc trò chuyện này."
+          : error.message ||
+            "Không thể tải chi tiết cuộc trò chuyện."
+      );
+    } finally {
+      setConversationDetailLoading(false);
+    }
+
+    try {
+      // GET /api/conversations/{conversationId}/messages
+      const data = await getConversationMessages(conversationId);
+
+      setMessages(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Fetch messages failed:", error);
+
+      setMessages([]);
+
+      setMessagesError(
+        error.status === 403
+          ? "Bạn không phải participant của cuộc trò chuyện này."
+          : error.message ||
+            "Không thể tải lịch sử tin nhắn."
+      );
+    } finally {
+      setMessagesLoading(false);
+    }
+  }
+
+  // =====================================================
+  // SIGNALR CHAT (MODULE 5 / BATCH 3)
+  // =====================================================
+
+  // Nhận tin nhắn realtime từ /hubs/chat.
+  // Tin nhắn đã được Hub lưu DB trước khi broadcast,
+  // nên người nhận offline vẫn xem được history.
+  function handleReceiveMessage(message) {
+    if (!message?.conversationId) {
+      return;
+    }
+
+    const conversationId = String(message.conversationId);
+
+    // Tin nhắn thuộc cuộc trò chuyện đang mở
+    // → thêm vào lịch sử tin nhắn hiển thị.
+    setMessages((previous) => {
+      if (
+        String(selectedConversationIdRef.current ?? "") !==
+        conversationId
+      ) {
+        return previous;
+      }
+
+      // Không thêm trùng tin nhắn đã có.
+      if (
+        previous.some(
+          (item) =>
+            String(item?.messageId ?? "") ===
+            String(message.messageId ?? "")
+        )
+      ) {
+        return previous;
+      }
+
+      return [
+        ...previous,
+        {
+          messageId: message.messageId,
+          senderId: message.senderId,
+          senderName: message.senderName,
+          content: message.content,
+          sentAt: message.sentAt,
+        },
+      ];
+    });
+
+    // Cập nhật tin nhắn cuối / số tin nhắn
+    // chưa đọc trong danh sách cuộc trò chuyện.
+    setConversations((previous) =>
+      previous.map((conversation) => {
+        if (
+          String(conversation?.conversationId ?? "") !==
+          conversationId
+        ) {
+          return conversation;
+        }
+
+        return {
+          ...conversation,
+          lastMessage: message.content,
+          lastMessageAt: message.sentAt,
+          unreadCount:
+            Number(conversation?.unreadCount ?? 0) + 1,
+        };
+      })
+    );
+  }
+
+  // Gửi tin nhắn realtime qua SignalR /hubs/chat.
+  // Người gửi lấy từ JWT trên Hub, không gửi từ client.
+  async function handleSendMessage(content) {
+    const conversationId = selectedConversationIdRef.current;
+
+    if (
+      !chatConnection ||
+      !conversationId ||
+      !content ||
+      sendingMessage
+    ) {
+      return;
+    }
+
+    setSendingMessage(true);
+    setMessagesError("");
+
+    try {
+      await chatConnection.invoke(
+        "SendMessage",
+        conversationId,
+        content
+      );
+    } catch (error) {
+      console.error("Send message failed:", error);
+
+      setMessagesError(
+        "Không thể gửi tin nhắn. Vui lòng thử lại."
+      );
+    } finally {
+      setSendingMessage(false);
+    }
+  }
+
+  // =====================================================
+  // NOTIFICATIONS (MODULE 5 / BATCH 4)
+  // =====================================================
+
+  async function fetchNotifications() {
+    setNotificationsLoading(true);
+    setNotificationsError("");
+
+    try {
+      // GET /api/notifications
+      const data = await getNotifications();
+
+      setNotifications(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Fetch notifications failed:", error);
+
+      setNotifications([]);
+
+      setNotificationsError(
+        error.message || "Không thể tải thông báo."
+      );
+    } finally {
+      setNotificationsLoading(false);
+    }
+  }
+
+  async function fetchUnreadNotifications() {
+    try {
+      // GET /api/notifications/unread
+      const data = await getUnreadNotifications();
+
+      setUnreadCount(Number(data?.unreadCount ?? 0) || 0);
+    } catch (error) {
+      console.error(
+        "Fetch unread notifications failed:",
+        error
+      );
+    }
+  }
+
+  function handleToggleNotifications() {
+    setNotificationsOpen((open) => {
+      const nextOpen = !open;
+
+      if (nextOpen) {
+        fetchNotifications();
+        fetchUnreadNotifications();
+      }
+
+      return nextOpen;
+    });
+  }
+
+  async function handleOpenNotification(notification) {
+    const notificationId = notification?.notificationId;
+
+    if (!notificationId) {
+      return;
+    }
+
+    setNotificationActionId(notificationId);
+
+    try {
+      // PUT /api/notifications/{id}/read
+      await markNotificationAsRead(notificationId);
+
+      setNotifications((previous) =>
+        previous.map((item) =>
+          String(item?.notificationId ?? "") ===
+          String(notificationId)
+            ? { ...item, isRead: true }
+            : item
+        )
+      );
+
+      await fetchUnreadNotifications();
+    } catch (error) {
+      console.error(
+        "Mark notification as read failed:",
+        error
+      );
+    } finally {
+      setNotificationActionId(null);
+    }
+  }
+
+  async function handleMarkAllNotificationsAsRead() {
+    setNotificationActionId("all");
+
+    try {
+      // PUT /api/notifications/read-all
+      await markAllNotificationsAsRead();
+
+      setNotifications((previous) =>
+        previous.map((item) => ({
+          ...item,
+          isRead: true,
+        }))
+      );
+
+      setUnreadCount(0);
+    } catch (error) {
+      console.error(
+        "Mark all notifications as read failed:",
+        error
+      );
+    } finally {
+      setNotificationActionId(null);
+    }
+  }
+
   // =====================================================
   // KHO TÀI LIỆU & SÁCH (MODULE 4 / BATCH 1)
   // =====================================================
+
+  // Các hàm xử lý Library của Module 4
+  // tiếp tục đặt bên dưới phần này.========
 
   async function fetchBooks(mode, filters) {
 
@@ -2443,9 +3161,16 @@ export default function App() {
 
     setBooksSuccess("");
 
-    if (libraryMode !== "all") {
-      return;
-    }
+        <HomePage
+          user={user}
+          onLogout={handleLogout}
+          onViewProfile={showProfile}
+          onSetupPreferences={showPreferences}
+          onViewMyPosts={showMyPosts}
+          onOpenMatching={showSmartMatching}
+          onOpenLostFound={showLostFound}
+          onOpenMessenger={showMessenger}
+        />
 
     fetchBooks("all", filters);
 
@@ -3832,10 +4557,24 @@ claimsItem={claimsItem}
 
 
         {/* ================================================
-            TRANG KHO TÀI LIỆU & SÁCH
+            TRANG KẾT NỐI (MODULE 5 / BATCH 1)
+        ================================================= */}
+
+        {page === "connections" && user && (
+
+          // GIỮ NGUYÊN TOÀN BỘ CODE TRANG KẾT NỐI Ở ĐÂY
+
+        )}
+
+        {/* ================================================
+            TRANG KHO TÀI LIỆU & SÁCH (MODULE 4)
         ================================================= */}
 
         {page === "library" && user && (
+
+          // GIỮ NGUYÊN TOÀN BỘ CODE TRANG KHO TÀI LIỆU & SÁCH Ở ĐÂY
+
+        )}
 
           <main className="auth-page">
 
@@ -3858,17 +4597,110 @@ claimsItem={claimsItem}
                     Ecom
                   </span>
                 </span>
-
               </div>
 
               <span className="header-label">
                 STUDENT COMMUNITY
               </span>
-
             </header>
+
+            <section className="pref-main">
+
+              <ConnectionRequests
+                mode={connectionMode}
+                onChangeMode={handleConnectionModeChange}
+                requests={connectionRequests}
+                loading={connectionLoading}
+                error={connectionError}
+                success={connectionSuccess}
+                currentUserId={user?.id ?? user?.Id ?? ""}
+                actionId={connectionActionId}
+                receiverId={receiverId}
+                sending={sending}
+                sendError={sendError}
+                onReceiverIdChange={setReceiverId}
+                onSend={handleSendConnectionRequest}
+                onAccept={handleAcceptConnectionRequest}
+                onReject={handleRejectConnectionRequest}
+                onOpenMessenger={showMessenger}
+                onBack={showProfile}
+              />
+
+            </section>
+
+            <footer className="site-footer">
+              CampusEcomSystemMini · Student & Campus Utility
+            </footer>
+
+          </main>
+
+        )}
+
+        {/* ================================================
+            TRANG MESSENGER (MODULE 5 / BATCH 2)
+        ================================================= */}
+
+        {page === "messenger" && user && (
+
+          <main className="auth-page">
+
+            <div className="auth-background-shape shape-one" />
+
+            <div className="auth-background-shape shape-two" />
+
+            <header className="site-header">
+
+              <div className="brand">
+
+                <span className="brand-icon">
+                  C
+                </span>
+
+                <span>
+                  Campus
+                  <span className="brand-highlight">
+                    Ecom
+                  </span>
+                </span>
+              </div>
+
+              <span className="header-label">
+                STUDENT COMMUNITY
+              </span>
+     </header>
 
 
             <section className="pref-main">
+
+              <MessengerPage
+                conversations={conversations}
+                loading={conversationsLoading}
+                error={conversationsError}
+                selectedConversation={selectedConversation}
+                selectedConversationId={selectedConversationId}
+                detail={conversationDetail}
+                detailLoading={conversationDetailLoading}
+                detailError={conversationDetailError}
+                messages={messages}
+                messagesLoading={messagesLoading}
+                messagesError={messagesError}
+                currentUserId={user?.id ?? user?.Id ?? ""}
+                chatConnected={chatConnected}
+                sendingMessage={sendingMessage}
+                onSendMessage={handleSendMessage}
+                unreadCount={unreadCount}
+                notifications={notifications}
+                notificationsLoading={notificationsLoading}
+                notificationsError={notificationsError}
+                notificationsOpen={notificationsOpen}
+                notificationActionId={notificationActionId}
+                onToggleNotifications={handleToggleNotifications}
+                onOpenNotification={handleOpenNotification}
+                onMarkAllNotificationsAsRead={handleMarkAllNotificationsAsRead}
+                onSelectConversation={handleSelectConversation}
+                onOpenConnections={showConnections}
+                onBack={showProfile}
+              />
 
               <LibraryPage
                 section={librarySection}
@@ -3960,6 +4792,7 @@ claimsItem={claimsItem}
                   onSubmitReview: handleSubmitDocumentReview,
                   onSubmitEditReview: handleSubmitEditDocumentReview,
                 }}
+              />
               />
 
             </section>

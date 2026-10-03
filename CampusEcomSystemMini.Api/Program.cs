@@ -1,7 +1,9 @@
 using CampusEcomSystemMini.Application;
+using CampusEcomSystemMini.Api.Hubs;
 using CampusEcomSystemMini.Infrastructure;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 
@@ -15,6 +17,13 @@ var builder = WebApplication.CreateBuilder(args);
 // ==================================================
 
 builder.Services.AddControllers();
+
+
+// ==================================================
+// 1b. SignalR (MODULE_5 / BATCH 3)
+// ==================================================
+
+builder.Services.AddSignalR();
 
 
 // ==================================================
@@ -104,6 +113,27 @@ builder.Services
                 // Token hết hạn là hết hạn ngay
                 ClockSkew = TimeSpan.Zero
             };
+
+        // SignalR gửi JWT qua query string
+        // (access_token=...) thay vì Authorization header.
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken =
+                    context.Request.Query["access_token"];
+
+                var path = context.HttpContext.Request.Path;
+
+                if (!string.IsNullOrEmpty(accessToken) &&
+                    path.StartsWithSegments("/hubs"))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            }
+        };
     });
 
 
@@ -157,6 +187,13 @@ app.UseAuthorization();
 // ==================================================
 
 app.MapControllers();
+
+
+// ==================================================
+// 9b. SignalR Hubs (MODULE_5 / BATCH 3)
+// ==================================================
+
+app.MapHub<ChatHub>("/hubs/chat");
 
 
 // ==================================================
