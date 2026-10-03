@@ -1,4 +1,5 @@
 using CampusEcomSystemMini.Application.Interfaces;
+using CampusEcomSystemMini.Application.Notifications;
 using MediatR;
 
 namespace CampusEcomSystemMini.Application.Connections.RejectRequest;
@@ -11,13 +12,19 @@ public class RejectRequestHandler
     private const string RejectedStatus = "Rejected";
 
     private readonly IConnectionRequestRepository _connectionRequestRepository;
+    private readonly IUserRepository _userRepository;
+    private readonly INotificationService _notificationService;
     private readonly ICurrentUserService _currentUserService;
 
     public RejectRequestHandler(
         IConnectionRequestRepository connectionRequestRepository,
+        IUserRepository userRepository,
+        INotificationService notificationService,
         ICurrentUserService currentUserService)
     {
         _connectionRequestRepository = connectionRequestRepository;
+        _userRepository = userRepository;
+        _notificationService = notificationService;
         _currentUserService = currentUserService;
     }
 
@@ -67,6 +74,20 @@ public class RejectRequestHandler
             cancellationToken);
 
         await _connectionRequestRepository.SaveChangesAsync(
+            cancellationToken);
+
+        // MODULE_5 / BATCH 5: tạo notification
+        // cho người gửi (Connection Rejected).
+        var receiver = await _userRepository.GetByIdAsync(
+            connectionRequest.ReceiverId,
+            cancellationToken);
+
+        await _notificationService.CreateNotificationAsync(
+            connectionRequest.SenderId,
+            NotificationTypes.ConnectionRejected,
+            "Yêu cầu kết nối đã bị từ chối",
+            $"{receiver?.FullName ?? "Sinh viên"} đã từ chối yêu cầu kết nối của bạn.",
+            connectionRequest.Id,
             cancellationToken);
 
         return new RejectRequestResult(

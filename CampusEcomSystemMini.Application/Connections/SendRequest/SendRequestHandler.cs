@@ -1,4 +1,5 @@
 using CampusEcomSystemMini.Application.Interfaces;
+using CampusEcomSystemMini.Application.Notifications;
 using CampusEcomSystemMini.Domain.Entities;
 using MediatR;
 
@@ -12,15 +13,18 @@ public class SendRequestHandler
     private readonly IConnectionRequestRepository _connectionRequestRepository;
     private readonly IUserRepository _userRepository;
     private readonly ICurrentUserService _currentUserService;
+    private readonly INotificationService _notificationService;
 
     public SendRequestHandler(
         IConnectionRequestRepository connectionRequestRepository,
         IUserRepository userRepository,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        INotificationService notificationService)
     {
         _connectionRequestRepository = connectionRequestRepository;
         _userRepository = userRepository;
         _currentUserService = currentUserService;
+        _notificationService = notificationService;
     }
 
     public async Task<SendRequestResult> Handle(
@@ -85,6 +89,16 @@ public class SendRequestHandler
             cancellationToken);
 
         await _connectionRequestRepository.SaveChangesAsync(
+            cancellationToken);
+
+        // MODULE_5 / BATCH 5: tạo notification
+        // cho người nhận (Connection Request).
+        await _notificationService.CreateNotificationAsync(
+            request.ReceiverId,
+            NotificationTypes.ConnectionRequest,
+            "Yêu cầu kết nối mới",
+            $"{sender?.FullName ?? "Sinh viên"} đã gửi cho bạn yêu cầu kết nối.",
+            connectionRequest.Id,
             cancellationToken);
 
         return new SendRequestResult(

@@ -1,9 +1,11 @@
-// MESSENGER — MODULE_5 / BATCH 2
+// MESSENGER — MODULE_5 / BATCH 2 + 4
 // Trang Messenger: danh sách cuộc trò chuyện
-// bên trái, cửa sổ trò chuyện bên phải.
-// API: conversationService.js
+// bên trái, cửa sổ trò chuyện bên phải,
+// chuông thông báo ở góc trên.
+// API: conversationService.js, notificationService.js
 import ConversationList from "./ConversationList.jsx";
 import ChatWindow from "./ChatWindow.jsx";
+import NotificationBell from "./NotificationBell.jsx";
 
 export default function MessengerPage({
   conversations,
@@ -18,6 +20,18 @@ export default function MessengerPage({
   messagesLoading,
   messagesError,
   currentUserId,
+  chatConnected,
+  sendingMessage,
+  onSendMessage,
+  unreadCount,
+  notifications,
+  notificationsLoading,
+  notificationsError,
+  notificationsOpen,
+  notificationActionId,
+  onToggleNotifications,
+  onOpenNotification,
+  onMarkAllNotificationsAsRead,
   onSelectConversation,
   onOpenConnections,
   onBack,
@@ -40,9 +54,23 @@ export default function MessengerPage({
           </p>
         </div>
 
-        <span className="pref-status pref-status--ready">
-          {conversations?.length ?? 0} cuộc trò chuyện
-        </span>
+        <div className="messenger-heading-side">
+          <NotificationBell
+            unreadCount={unreadCount}
+            notifications={notifications}
+            loading={notificationsLoading}
+            error={notificationsError}
+            open={notificationsOpen}
+            actionId={notificationActionId}
+            onToggle={onToggleNotifications}
+            onOpenNotification={onOpenNotification}
+            onMarkAllAsRead={onMarkAllNotificationsAsRead}
+          />
+
+          <span className="pref-status pref-status--ready">
+            {conversations?.length ?? 0} cuộc trò chuyện
+          </span>
+        </div>
       </div>
 
       {error && (
@@ -94,6 +122,9 @@ export default function MessengerPage({
             messagesLoading={messagesLoading}
             messagesError={messagesError}
             currentUserId={currentUserId}
+            chatConnected={chatConnected}
+            sendingMessage={sendingMessage}
+            onSendMessage={onSendMessage}
           />
         </div>
       </div>

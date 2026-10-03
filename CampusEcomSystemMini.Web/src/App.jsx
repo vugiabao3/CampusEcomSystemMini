@@ -2,7 +2,7 @@
 //logic ghép các COMPONENTS lại với nhauuuuu
 
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import LoginForm from "./components/LoginForm";
 import RegisterForm from "./components/RegisterForm";
@@ -82,6 +82,15 @@ import {
   getConversation,
   getConversationMessages,
 } from "./services/conversationService.js";
+
+import { createChatConnection } from "./hubs/chatHub.js";
+
+import {
+  getNotifications,
+  getUnreadNotifications,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+} from "./services/notificationService.js";
 
 import "./styles/auth.css";
 import "./styles/preferences.css";
@@ -301,6 +310,39 @@ export default function App() {
 
   const [messagesError, setMessagesError] = useState("");
 
+  // =====================================================
+  // SIGNALR REALTIME CHAT (MODULE_5 / BATCH 3)
+  // =====================================================
+
+  // Kết nối SignalR đến /hubs/chat.
+  const [chatConnection, setChatConnection] = useState(null);
+
+  const [chatConnected, setChatConnected] = useState(false);
+
+  const [sendingMessage, setSendingMessage] = useState(false);
+
+  // =====================================================
+  // NOTIFICATIONS (MODULE_5 / BATCH 4)
+  // =====================================================
+
+  const [notifications, setNotifications] = useState([]);
+
+  const [notificationsLoading, setNotificationsLoading] =
+    useState(false);
+
+  const [notificationsError, setNotificationsError] =
+    useState("");
+
+  // Unread count cho Notification Bell.
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const [notificationsOpen, setNotificationsOpen] =
+    useState(false);
+
+  // Thông báo đang được đánh dấu đã đọc.
+  const [notificationActionId, setNotificationActionId] =
+    useState(null);
+
 
   // =====================================================
   // KIỂM TRA JWT KHI MỞ / REFRESH TRANG
@@ -339,6 +381,12 @@ export default function App() {
 
         setUser(null);
 
+        // Đặt lại trạng thái notification
+        // khi restore login thất bại.
+        setNotifications([]);
+        setUnreadCount(0);
+        setNotificationsOpen(false);
+
         setPage("login");
 
       } finally {
@@ -351,6 +399,88 @@ export default function App() {
     restoreLogin();
 
   }, []);
+
+
+  // =====================================================
+  // SIGNALR /hubs/chat — KẾT NỐI THEO LOGIN / LOGOUT
+  // (MODULE_5 / BATCH 3)
+  // =====================================================
+
+  // Ref luôn trỏ đến cuộc trò chuyện đang chọn,
+  // để handler SignalR không dùng closure cũ.
+  const selectedConversationIdRef = useRef(null);
+
+  useEffect(() => {
+    selectedConversationIdRef.current = selectedConversationId;
+  }, [selectedConversationId]);
+
+  // Ref luôn trỏ đến phiên bản mới nhất của
+  // handler nhận tin nhắn realtime.
+  const receiveMessageRef = useRef(null);
+
+  useEffect(() => {
+    receiveMessageRef.current = handleReceiveMessage;
+  });
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    let cancelled = false;
+
+    // Tạo kết nối SignalR. JWT được gửi qua
+    // accessTokenFactory (query string access_token).
+    const connection = createChatConnection(
+      (message) => {
+        receiveMessageRef.current?.(message);
+      }
+    );
+
+    setChatConnection(connection);
+
+    connection
+      .start()
+      .then(() => {
+        if (!cancelled) {
+          setChatConnected(true);
+        }
+      })
+      .catch((error) => {
+        console.error("Chat connect failed:", error);
+
+        if (!cancelled) {
+          setChatConnected(false);
+        }
+      });
+
+    // Logout / chuyển user → dừng HubConnection.
+    return () => {
+      cancelled = true;
+
+      setChatConnected(false);
+
+      setChatConnection(null);
+
+      connection.stop().catch((error) => {
+        console.error("Chat stop failed:", error);
+      });
+    };
+  }, [user]);
+
+
+  // =====================================================
+  // UNREAD NOTIFICATION COUNT KHI ĐĂNG NHẬP / REFRESH
+  // (MODULE_5 / BATCH 4)
+  // =====================================================
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    fetchUnreadNotifications();
+  }, [user]);
 
 
   // =====================================================
@@ -401,12 +531,18 @@ export default function App() {
         error
       );
 
-      setUser(null);
+        setUser(null);
 
-      setError(
-        error.message ||
-        "Đăng nhập thất bại."
-      );
+        // Đặt lại trạng thái notification
+        // khi đăng nhập thất bại.
+        setNotifications([]);
+        setUnreadCount(0);
+        setNotificationsOpen(false);
+
+        setError(
+          error.message ||
+          "Đăng nhập thất bại."
+        );
 
     } finally {
 
@@ -489,6 +625,11 @@ export default function App() {
 
       // Xóa user khỏi React
       setUser(null);
+
+      // Dừng chuông thông báo khi đăng xuất.
+      setNotifications([]);
+      setUnreadCount(0);
+      setNotificationsOpen(false);
 
       // Quay lại Login
       setPage("login");
@@ -2501,6 +2642,232 @@ export default function App() {
   }
 
   // =====================================================
+  // SIGNALR CHAT (MODULE_5 / BATCH 3)
+  // =====================================================
+
+  // Nhận tin nhắn realtime từ /hubs/chat
+  // (ReceiveMessage). Tin nhắn đã được Hub lưu
+  // DB trước khi broadcast, nên người nhận offline
+  // vẫn xem được history.
+  function handleReceiveMessage(message) {
+    if (!message?.conversationId) {
+      return;
+    }
+
+    const conversationId = String(message.conversationId);
+
+    // Tin nhắn thuộc cuộc trò chuyện đang mở
+    // → thêm vào lịch sử tin nhắn hiển thị.
+    setMessages((previous) => {
+      if (
+        String(selectedConversationIdRef.current ?? "") !==
+        conversationId
+      ) {
+        return previous;
+      }
+
+      // Không thêm trùng tin nhắn đã có.
+      if (
+        previous.some(
+          (item) =>
+            String(item?.messageId ?? "") ===
+            String(message.messageId ?? "")
+        )
+      ) {
+        return previous;
+      }
+
+      return [
+        ...previous,
+        {
+          messageId: message.messageId,
+          senderId: message.senderId,
+          senderName: message.senderName,
+          content: message.content,
+          sentAt: message.sentAt,
+        },
+      ];
+    });
+
+    // Cập nhật tin nhắn cuối / số tin nhắn
+    // chưa đọc trong danh sách cuộc trò chuyện.
+    setConversations((previous) =>
+      previous.map((conversation) => {
+        if (
+          String(conversation?.conversationId ?? "") !==
+          conversationId
+        ) {
+          return conversation;
+        }
+
+        return {
+          ...conversation,
+          lastMessage: message.content,
+          lastMessageAt: message.sentAt,
+          unreadCount:
+            Number(conversation?.unreadCount ?? 0) + 1,
+        };
+      })
+    );
+  }
+
+  // Gửi tin nhắn realtime qua SignalR /hubs/chat.
+  // Người gửi lấy từ JWT trên Hub, không gửi từ client.
+  async function handleSendMessage(content) {
+    const conversationId = selectedConversationIdRef.current;
+
+    if (
+      !chatConnection ||
+      !conversationId ||
+      !content ||
+      sendingMessage
+    ) {
+      return;
+    }
+
+    setSendingMessage(true);
+
+    setMessagesError("");
+
+    try {
+      await chatConnection.invoke(
+        "SendMessage",
+        conversationId,
+        content
+      );
+    } catch (error) {
+      console.error("Send message failed:", error);
+
+      setMessagesError(
+        "Không thể gửi tin nhắn. Vui lòng thử lại."
+      );
+    } finally {
+      setSendingMessage(false);
+    }
+  }
+
+  // =====================================================
+  // NOTIFICATIONS (MODULE_5 / BATCH 4)
+  // =====================================================
+
+  async function fetchNotifications() {
+    setNotificationsLoading(true);
+
+    setNotificationsError("");
+
+    try {
+      // GET /api/notifications
+      const data = await getNotifications();
+
+      setNotifications(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error(
+        "Fetch notifications failed:",
+        error
+      );
+
+      setNotifications([]);
+
+      setNotificationsError(
+        error.message || "Không thể tải thông báo."
+      );
+    } finally {
+      setNotificationsLoading(false);
+    }
+  }
+
+  async function fetchUnreadNotifications() {
+    try {
+      // GET /api/notifications/unread
+      const data = await getUnreadNotifications();
+
+      setUnreadCount(Number(data?.unreadCount ?? 0) || 0);
+    } catch (error) {
+      console.error(
+        "Fetch unread notifications failed:",
+        error
+      );
+    }
+  }
+
+  function handleToggleNotifications() {
+    setNotificationsOpen((open) => {
+      const nextOpen = !open;
+
+      // Mở chuông thông báo → tải danh sách
+      // và unread count từ Backend.
+      if (nextOpen) {
+        fetchNotifications();
+        fetchUnreadNotifications();
+      }
+
+      return nextOpen;
+    });
+  }
+
+  // Nhấn vào thông báo → đánh dấu đã đọc
+  // (chỉ owner được mark read).
+  async function handleOpenNotification(notification) {
+    const notificationId = notification?.notificationId;
+
+    if (!notificationId) {
+      return;
+    }
+
+    setNotificationActionId(notificationId);
+
+    try {
+      // PUT /api/notifications/{id}/read
+      await markNotificationAsRead(notificationId);
+
+      setNotifications((previous) =>
+        previous.map((item) =>
+          String(item?.notificationId ?? "") ===
+          String(notificationId)
+            ? { ...item, isRead: true }
+            : item
+        )
+      );
+
+      await fetchUnreadNotifications();
+    } catch (error) {
+      console.error(
+        "Mark notification as read failed:",
+        error
+      );
+    } finally {
+      setNotificationActionId(null);
+    }
+  }
+
+  // Đánh dấu đã đọc tất cả thông báo
+  // của người dùng đang đăng nhập.
+  async function handleMarkAllNotificationsAsRead() {
+    setNotificationActionId("all");
+
+    try {
+      // PUT /api/notifications/read-all
+      await markAllNotificationsAsRead();
+
+      setNotifications((previous) =>
+        previous.map((item) => ({
+          ...item,
+          isRead: true,
+        }))
+      );
+
+      setUnreadCount(0);
+    } catch (error) {
+      console.error(
+        "Mark all notifications as read failed:",
+        error
+      );
+    } finally {
+      setNotificationActionId(null);
+    }
+  }
+
+  // =====================================================
   // RENDER
   // =====================================================
 
@@ -3028,6 +3395,18 @@ claimsItem={claimsItem}
                 messagesLoading={messagesLoading}
                 messagesError={messagesError}
                 currentUserId={user?.id ?? user?.Id ?? ""}
+                chatConnected={chatConnected}
+                sendingMessage={sendingMessage}
+                onSendMessage={handleSendMessage}
+                unreadCount={unreadCount}
+                notifications={notifications}
+                notificationsLoading={notificationsLoading}
+                notificationsError={notificationsError}
+                notificationsOpen={notificationsOpen}
+                notificationActionId={notificationActionId}
+                onToggleNotifications={handleToggleNotifications}
+                onOpenNotification={handleOpenNotification}
+                onMarkAllNotificationsAsRead={handleMarkAllNotificationsAsRead}
                 onSelectConversation={handleSelectConversation}
                 onOpenConnections={showConnections}
                 onBack={showProfile}

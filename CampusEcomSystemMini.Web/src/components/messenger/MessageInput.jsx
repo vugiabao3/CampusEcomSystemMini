@@ -1,14 +1,27 @@
-// MESSENGER — MODULE_5 / BATCH 2
-// Ô nhập tin nhắn.
-// Gửi tin nhắn realtime qua SignalR thuộc BATCH 3,
-// nên ô nhập tạm thời bị khóa cho đến khi bật chat.
+// MESSENGER — MODULE_5 / BATCH 3
+// Ô nhập tin nhắn. Gửi realtime qua
+// SignalR /hubs/chat (chatHub.js).
 import { useState } from "react";
 
-export default function MessageInput({ disabled }) {
+export default function MessageInput({
+  disabled,
+  sending,
+  onSend,
+}) {
   const [content, setContent] = useState("");
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
+
+    const trimmed = (content ?? "").trim();
+
+    if (!trimmed || sending || disabled) {
+      return;
+    }
+
+    await onSend(trimmed);
+
+    setContent("");
   }
 
   return (
@@ -19,21 +32,16 @@ export default function MessageInput({ disabled }) {
         placeholder="Nhập tin nhắn..."
         value={content}
         onChange={(event) => setContent(event.target.value)}
-        disabled={disabled}
+        disabled={disabled || sending}
       />
 
       <button
         className="message-input-action"
         type="submit"
-        disabled={disabled || !content.trim()}
+        disabled={disabled || sending || !content.trim()}
       >
-        Gửi
+        {sending ? "Đang gửi..." : "Gửi"}
       </button>
-
-      <span className="form-hint message-input-hint">
-        Gửi tin nhắn realtime sẽ được bật khi chat SignalR
-        hoạt động ở bản cập nhật tiếp theo.
-      </span>
     </form>
   );
 }

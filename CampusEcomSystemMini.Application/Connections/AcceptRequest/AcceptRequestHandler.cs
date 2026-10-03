@@ -1,4 +1,5 @@
 using CampusEcomSystemMini.Application.Interfaces;
+using CampusEcomSystemMini.Application.Notifications;
 using CampusEcomSystemMini.Domain.Entities;
 using MediatR;
 
@@ -14,17 +15,23 @@ public class AcceptRequestHandler
     private readonly IConnectionRequestRepository _connectionRequestRepository;
     private readonly IConversationRepository _conversationRepository;
     private readonly IConversationParticipantRepository _participantRepository;
+    private readonly IUserRepository _userRepository;
+    private readonly INotificationService _notificationService;
     private readonly ICurrentUserService _currentUserService;
 
     public AcceptRequestHandler(
         IConnectionRequestRepository connectionRequestRepository,
         IConversationRepository conversationRepository,
         IConversationParticipantRepository participantRepository,
+        IUserRepository userRepository,
+        INotificationService notificationService,
         ICurrentUserService currentUserService)
     {
         _connectionRequestRepository = connectionRequestRepository;
         _conversationRepository = conversationRepository;
         _participantRepository = participantRepository;
+        _userRepository = userRepository;
+        _notificationService = notificationService;
         _currentUserService = currentUserService;
     }
 
@@ -118,6 +125,20 @@ public class AcceptRequestHandler
         }
 
         await _connectionRequestRepository.SaveChangesAsync(
+            cancellationToken);
+
+        // MODULE_5 / BATCH 5: tạo notification
+        // cho người gửi (Connection Accepted).
+        var receiver = await _userRepository.GetByIdAsync(
+            connectionRequest.ReceiverId,
+            cancellationToken);
+
+        await _notificationService.CreateNotificationAsync(
+            connectionRequest.SenderId,
+            NotificationTypes.ConnectionAccepted,
+            "Yêu cầu kết nối đã được đồng ý",
+            $"{receiver?.FullName ?? "Sinh viên"} đã đồng ý yêu cầu kết nối của bạn.",
+            connectionRequest.Id,
             cancellationToken);
 
         return new AcceptRequestResult(

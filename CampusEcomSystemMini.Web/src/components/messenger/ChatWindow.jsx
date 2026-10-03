@@ -1,6 +1,7 @@
-// MESSENGER — MODULE_5 / BATCH 2
+// MESSENGER — MODULE_5 / BATCH 2 + 3
 // Cửa sổ trò chuyện: tiêu đề người kia,
-// lịch sử tin nhắn và ô nhập tin nhắn.
+// lịch sử tin nhắn và ô gửi tin nhắn
+// realtime qua SignalR /hubs/chat.
 import MessageList from "./MessageList.jsx";
 import MessageInput from "./MessageInput.jsx";
 
@@ -23,6 +24,9 @@ export default function ChatWindow({
   messagesLoading,
   messagesError,
   currentUserId,
+  chatConnected,
+  sendingMessage,
+  onSendMessage,
 }) {
   // Chưa chọn cuộc trò chuyện nào.
   if (!conversation) {
@@ -54,9 +58,15 @@ export default function ChatWindow({
       String(currentUserId ?? "").toLowerCase()
   );
 
-  const otherName = other?.fullName || conversation?.otherUserName || "Sinh viên";
+  const otherName =
+    other?.fullName ||
+    conversation?.otherUserName ||
+    "Sinh viên";
 
-  const otherAvatarUrl = other?.avatarUrl ?? conversation?.otherUserAvatarUrl ?? null;
+  const otherAvatarUrl =
+    other?.avatarUrl ??
+    conversation?.otherUserAvatarUrl ??
+    null;
 
   return (
     <div className="chat-window">
@@ -73,7 +83,9 @@ export default function ChatWindow({
           <h3 className="chat-window-name">{otherName}</h3>
 
           <span className="chat-window-status">
-            Cuộc trò chuyện 1-1
+            {chatConnected
+              ? "Cuộc trò chuyện 1-1 · Đang kết nối"
+              : "Cuộc trò chuyện 1-1"}
           </span>
         </div>
       </header>
@@ -85,15 +97,32 @@ export default function ChatWindow({
           </div>
         )}
 
+        {!chatConnected && (
+          <div className="message message-error" role="alert">
+            Kết nối chat realtime chưa sẵn sàng.
+            Lịch sử tin nhắn vẫn hiển thị từ Database.
+          </div>
+        )}
+
+        {messagesError && (
+          <div className="message message-error" role="alert">
+            {messagesError}
+          </div>
+        )}
+
         <MessageList
           messages={messages}
           loading={messagesLoading || detailLoading}
-          error={messagesError}
+          error=""
           currentUserId={currentUserId}
         />
       </div>
 
-      <MessageInput disabled />
+      <MessageInput
+        disabled={!chatConnected}
+        sending={sendingMessage}
+        onSend={onSendMessage}
+      />
     </div>
   );
 }

@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using CampusEcomSystemMini.Infrastructure.Services;
+using CampusEcomSystemMini.Infrastructure.Services.Notification;
  
 namespace CampusEcomSystemMini.Infrastructure;
 
@@ -65,6 +66,14 @@ public static class DependencyInjection
         services.AddScoped<
             IMessageRepository,
             MessageRepository>();
+
+        services.AddScoped<
+            INotificationRepository,
+            NotificationRepository>();
+
+        services.AddScoped<
+            INotificationService,
+            NotificationService>();
 
         services.AddScoped<
             IPasswordHasher,

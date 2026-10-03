@@ -33,6 +33,8 @@ public class AppDbContext : DbContext
 
     public DbSet<Message> Messages {get;set;}
 
+    public DbSet<Notification> Notifications {get;set;}
+
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
     {
@@ -204,6 +206,21 @@ entity.HasOne<Post>()
             entity.HasOne<User>()
                 .WithMany()
                 .HasForeignKey(x => x.SenderId)
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            entity.HasIndex(x => x.UserId);
+
+            // SQL Server không cho phép nhiều đường cascade
+            // (Users -> ConnectionRequests và Users -> Notifications),
+            // nên thông báo không cascade trực tiếp từ User.
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.NoAction);
         });
     }
