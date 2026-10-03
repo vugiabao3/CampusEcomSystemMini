@@ -2,7 +2,7 @@
 //logic ghép các COMPONENTS lại với nhauuuuu
 
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import LoginForm from "./components/LoginForm";
 import RegisterForm from "./components/RegisterForm";
@@ -16,6 +16,9 @@ import SmartMatching from "./components/SmartMatching";
 import LostFoundPage from "./components/LostFoundPage";
 import Leaderboard from "./components/gamification/Leaderboard";
 
+import ConnectionRequests from "./components/ConnectionRequests";
+import MessengerPage from "./components/messenger/MessengerPage.jsx";
+import LibraryPage from "./components/library/LibraryPage";
 import {
   getMe,
   getToken,
@@ -79,12 +82,57 @@ import {
   getMyRank,
 } from "./services/leaderboardService";
 
+import {
+  sendConnectionRequest,
+  getConnectionRequests,
+  acceptConnectionRequest,
+  rejectConnectionRequest,
+} from "./services/connectionService";
+
+import {
+  getConversations,
+  getConversation,
+  getConversationMessages,
+} from "./services/conversationService.js";
+
+import { createChatConnection } from "./hubs/chatHub.js";
+
+import {
+  getNotifications,
+  getUnreadNotifications,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+} from "./services/notificationService.js";
+
+import {
+  getBooks,
+  getMyBooks,
+  getBookById,
+  createBook,
+  updateBook,
+  deleteBook,
+  getExchangeMatches,
+  getDocuments,
+  getMyDocuments,
+  getDocumentById,
+  createDocument,
+  updateDocument,
+  deleteDocument,
+  downloadDocument,
+  saveDownloadedFile,
+  getDocumentReviews,
+  createDocumentReview,
+  updateDocumentReview,
+  deleteDocumentReview,
+} from "./services/libraryService";
 import "./styles/auth.css";
 import "./styles/preferences.css";
 import "./styles/posts.css";
 import "./styles/matching.css";
 import "./styles/lostFound.css";
 import "./styles/gamification.css";
+import "./styles/messenger.css";
+import "./styles/library.css";
 
 export default function App() {
 
@@ -239,9 +287,218 @@ export default function App() {
 
   const [claimsError, setClaimsError] = useState("");
 
-  // Yêu cầu đang được duyệt / từ chối, hoặc "returned"
+// Yêu cầu đang được duyệt / từ chối, hoặc "returned"
   // khi chủ bài đăng xác nhận đã trả đồ.
   const [claimsActionId, setClaimsActionId] = useState(null);
+
+  // =====================================================
+  // CONNECTION REQUESTS (MODULE 5 / BATCH 1)
+  // =====================================================
+
+  // Tab: "received" (nhận được) | "sent" (đã gửi)
+  const [connectionMode, setConnectionMode] = useState("received");
+
+  const [connectionRequests, setConnectionRequests] = useState([]);
+
+  const [connectionLoading, setConnectionLoading] = useState(false);
+
+  const [connectionError, setConnectionError] = useState("");
+
+  const [connectionSuccess, setConnectionSuccess] = useState("");
+
+  // Yêu cầu đang được chấp nhận / từ chối
+  const [connectionActionId, setConnectionActionId] = useState(null);
+
+  // Form gửi yêu cầu kết nối
+  const [receiverId, setReceiverId] = useState("");
+
+  const [sending, setSending] = useState(false);
+
+  const [sendError, setSendError] = useState("");
+
+  // =====================================================
+  // MESSENGER (MODULE 5 / BATCH 2)
+  // =====================================================
+
+  const [conversations, setConversations] = useState([]);
+
+  const [conversationsLoading, setConversationsLoading] = useState(false);
+
+  const [conversationsError, setConversationsError] = useState("");
+
+  // Cuộc trò chuyện đang được chọn trong Messenger
+  const [selectedConversation, setSelectedConversation] = useState(null);
+
+  const [selectedConversationId, setSelectedConversationId] = useState(null);
+
+  // Chi tiết cuộc trò chuyện (participant)
+  const [conversationDetail, setConversationDetail] = useState(null);
+
+  const [conversationDetailLoading, setConversationDetailLoading] =
+    useState(false);
+
+  const [conversationDetailError, setConversationDetailError] =
+    useState("");
+
+  // Lịch sử tin nhắn của cuộc trò chuyện đang chọn
+  const [messages, setMessages] = useState([]);
+
+  const [messagesLoading, setMessagesLoading] = useState(false);
+
+  const [messagesError, setMessagesError] = useState("");
+
+  // =====================================================
+  // SIGNALR REALTIME CHAT (MODULE 5 / BATCH 3)
+  // =====================================================
+
+  // Kết nối SignalR đến /hubs/chat.
+  const [chatConnection, setChatConnection] = useState(null);
+
+  const [chatConnected, setChatConnected] = useState(false);
+
+  const [sendingMessage, setSendingMessage] = useState(false);
+
+  // =====================================================
+  // NOTIFICATIONS (MODULE 5 / BATCH 4)
+  // =====================================================
+
+  const [notifications, setNotifications] = useState([]);
+
+  const [notificationsLoading, setNotificationsLoading] =
+    useState(false);
+
+  const [notificationsError, setNotificationsError] =
+    useState("");
+
+  // Unread count cho Notification Bell.
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const [notificationsOpen, setNotificationsOpen] =
+    useState(false);
+
+  // Thông báo đang được đánh dấu đã đọc.
+  const [notificationActionId, setNotificationActionId] =
+    useState(null);
+
+  // =====================================================
+  // KHO TÀI LIỆU & SÁCH — MODULE 4
+  // =====================================================
+
+  // "books" hoặc "documents"
+  const [librarySection, setLibrarySection] = useState("books");
+
+  // "all" = GET /api/library/books, "mine" = GET /api/library/books/me
+  const [libraryMode, setLibraryMode] = useState("all");
+
+  const [books, setBooks] = useState([]);
+
+  const [booksLoading, setBooksLoading] = useState(false);
+
+  const [booksSaving, setBooksSaving] = useState(false);
+
+  const [booksError, setBooksError] = useState("");
+
+  const [booksSuccess, setBooksSuccess] = useState("");
+
+  // Bộ lọc GET /api/library/books?search=...&status=...
+  const [bookFilters, setBookFilters] = useState({
+    search: "",
+    status: "",
+  });
+
+  const [bookFormOpen, setBookFormOpen] = useState(false);
+
+  const [editingBook, setEditingBook] = useState(null);
+
+  const [bookDetailOpen, setBookDetailOpen] = useState(false);
+
+  const [bookDetail, setBookDetail] = useState(null);
+
+  const [bookDetailLoading, setBookDetailLoading] = useState(false);
+
+  const [bookDetailError, setBookDetailError] = useState("");
+
+  // Chuỗi đổi sách của người đang đăng nhập
+  const [bookMatches, setBookMatches] = useState([]);
+
+  const [bookMatchesLoading, setBookMatchesLoading] = useState(false);
+
+  const [bookMatchesError, setBookMatchesError] = useState("");
+
+  // =====================================================
+  // TÀI LIỆU SỐ — MODULE 4 / BATCH 2 + BATCH 3
+  // =====================================================
+
+  // "all" | "free" | "paid" = GET /api/library/documents
+  // "mine" = GET /api/library/documents/me
+  const [documentMode, setDocumentMode] = useState("all");
+
+  const [documents, setDocuments] = useState([]);
+
+  const [documentsLoading, setDocumentsLoading] = useState(false);
+
+  const [documentsSaving, setDocumentsSaving] = useState(false);
+
+  const [documentsError, setDocumentsError] = useState("");
+
+  const [documentsSuccess, setDocumentsSuccess] = useState("");
+
+  // Bộ lọc GET /api/library/documents?search=...&subject=...&pricing=...
+  const [documentFilters, setDocumentFilters] = useState({
+    search: "",
+    subject: "",
+    pricing: "",
+  });
+
+  const [documentFormOpen, setDocumentFormOpen] = useState(false);
+
+  const [editingDocument, setEditingDocument] = useState(null);
+
+  const [documentDetailOpen, setDocumentDetailOpen] = useState(false);
+
+  const [documentDetail, setDocumentDetail] = useState(null);
+
+  const [documentDetailLoading, setDocumentDetailLoading] = useState(false);
+
+  const [documentDetailError, setDocumentDetailError] = useState("");
+
+  // Đang tải tài liệu: lưu id để disable đúng nút tải.
+  const [downloadingDocumentId, setDownloadingDocumentId] =
+    useState("");
+
+  const [documentDownloadError, setDocumentDownloadError] = useState("");
+
+  const [documentDownloadSuccess, setDocumentDownloadSuccess] =
+    useState("");
+
+  // =====================================================
+  // ĐÁNH GIÁ TÀI LIỆU — MODULE 4 / BATCH 4
+  // =====================================================
+
+  // Đánh giá của tài liệu đang mở chi tiết.
+  const [documentReviews, setDocumentReviews] = useState([]);
+
+  const [documentReviewsLoading, setDocumentReviewsLoading] =
+    useState(false);
+
+  const [documentReviewsError, setDocumentReviewsError] = useState("");
+
+  const [documentReviewsSaving, setDocumentReviewsSaving] =
+    useState(false);
+
+  const [documentReviewsSuccess, setDocumentReviewsSuccess] =
+    useState("");
+
+  const [documentReviewFormError, setDocumentReviewFormError] =
+    useState("");
+
+  // Review đang sửa, null = không sửa review nào.
+  const [editingDocumentReviewId, setEditingDocumentReviewId] =
+    useState(null);
+
+  // Review đang xóa, dùng để disable đúng nút xóa.
+  const [deletingDocumentReviewId, setDeletingDocumentReviewId] =
+    useState(null);
 
 
   // =====================================================
@@ -316,6 +573,12 @@ export default function App() {
 
         setUser(null);
 
+        // Đặt lại trạng thái notification
+        // khi restore login thất bại.
+        setNotifications([]);
+        setUnreadCount(0);
+        setNotificationsOpen(false);
+
         setPage("login");
 
       } finally {
@@ -328,6 +591,88 @@ export default function App() {
     restoreLogin();
 
   }, []);
+
+
+  // =====================================================
+  // SIGNALR /hubs/chat — KẾT NỐI THEO LOGIN / LOGOUT
+  // (MODULE_5 / BATCH 3)
+  // =====================================================
+
+  // Ref luôn trỏ đến cuộc trò chuyện đang chọn,
+  // để handler SignalR không dùng closure cũ.
+  const selectedConversationIdRef = useRef(null);
+
+  useEffect(() => {
+    selectedConversationIdRef.current = selectedConversationId;
+  }, [selectedConversationId]);
+
+  // Ref luôn trỏ đến phiên bản mới nhất của
+  // handler nhận tin nhắn realtime.
+  const receiveMessageRef = useRef(null);
+
+  useEffect(() => {
+    receiveMessageRef.current = handleReceiveMessage;
+  });
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    let cancelled = false;
+
+    // Tạo kết nối SignalR. JWT được gửi qua
+    // accessTokenFactory (query string access_token).
+    const connection = createChatConnection(
+      (message) => {
+        receiveMessageRef.current?.(message);
+      }
+    );
+
+    setChatConnection(connection);
+
+    connection
+      .start()
+      .then(() => {
+        if (!cancelled) {
+          setChatConnected(true);
+        }
+      })
+      .catch((error) => {
+        console.error("Chat connect failed:", error);
+
+        if (!cancelled) {
+          setChatConnected(false);
+        }
+      });
+
+    // Logout / chuyển user → dừng HubConnection.
+    return () => {
+      cancelled = true;
+
+      setChatConnected(false);
+
+      setChatConnection(null);
+
+      connection.stop().catch((error) => {
+        console.error("Chat stop failed:", error);
+      });
+    };
+  }, [user]);
+
+
+  // =====================================================
+  // UNREAD NOTIFICATION COUNT KHI ĐĂNG NHẬP / REFRESH
+  // (MODULE_5 / BATCH 4)
+  // =====================================================
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    fetchUnreadNotifications();
+  }, [user]);
 
 
   // =====================================================
@@ -378,12 +723,18 @@ export default function App() {
         error
       );
 
-      setUser(null);
+        setUser(null);
 
-      setError(
-        error.message ||
-        "Đăng nhập thất bại."
-      );
+        // Đặt lại trạng thái notification
+        // khi đăng nhập thất bại.
+        setNotifications([]);
+        setUnreadCount(0);
+        setNotificationsOpen(false);
+
+        setError(
+          error.message ||
+          "Đăng nhập thất bại."
+        );
 
     } finally {
 
@@ -466,6 +817,11 @@ export default function App() {
 
       // Xóa user khỏi React
       setUser(null);
+
+      // Dừng chuông thông báo khi đăng xuất.
+      setNotifications([]);
+      setUnreadCount(0);
+      setNotificationsOpen(false);
 
       // Quay lại Login
       setPage("login");
@@ -2314,6 +2670,1684 @@ export default function App() {
   }
 
 
+   // =====================================================
+  // CONNECTION REQUESTS (MODULE 5 / BATCH 1)
+  // =====================================================
+
+  // Backend là nguồn sự thật: sau mỗi thao tác,
+  // danh sách yêu cầu được tải lại từ API.
+  async function fetchConnectionRequests() {
+    setConnectionLoading(true);
+    setConnectionError("");
+
+    try {
+      // GET /api/connections/requests
+      const data = await getConnectionRequests();
+
+      setConnectionRequests(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Fetch connection requests failed:", error);
+
+      setConnectionRequests([]);
+
+      setConnectionError(
+        error.message || "Không thể tải yêu cầu kết nối."
+      );
+    } finally {
+      setConnectionLoading(false);
+    }
+  }
+
+  function showConnections() {
+    setPage("connections");
+
+    setError("");
+    setSuccess("");
+
+    setConnectionMode("received");
+    setConnectionSuccess("");
+    setConnectionError("");
+    setSendError("");
+    setReceiverId("");
+
+    fetchConnectionRequests();
+  }
+
+  function handleConnectionModeChange(mode) {
+    setConnectionMode(mode);
+    setConnectionSuccess("");
+    setConnectionError("");
+  }
+
+  function getConnectionErrorMessage(error) {
+    if (error.status === 400) {
+      return "Không thể gửi yêu cầu kết nối cho chính mình.";
+    }
+
+    if (error.status === 404) {
+      return "Người nhận không tồn tại.";
+    }
+
+    if (error.status === 409) {
+      return "Đã có yêu cầu kết nối đang chờ với người này.";
+    }
+
+    return error.message || "Không thể gửi yêu cầu kết nối.";
+  }
+
+  async function handleSendConnectionRequest(targetReceiverId) {
+    const trimmed = String(targetReceiverId ?? "").trim();
+
+    if (!trimmed) {
+      return;
+    }
+
+    setSending(true);
+    setSendError("");
+    setConnectionSuccess("");
+
+    try {
+      // POST /api/connections/requests
+      const data = await sendConnectionRequest(trimmed);
+
+      setReceiverId("");
+
+      setConnectionSuccess(
+        `Đã gửi yêu cầu kết nối đến ${
+          data?.receiverName ?? "người nhận"
+        }.`
+      );
+
+      await fetchConnectionRequests();
+    } catch (error) {
+      console.error("Send connection request failed:", error);
+
+      setSendError(getConnectionErrorMessage(error));
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function handleAcceptConnectionRequest(request) {
+    const connectionRequestId = request?.connectionRequestId;
+
+    if (!connectionRequestId) {
+      return;
+    }
+
+    setConnectionActionId(connectionRequestId);
+    setConnectionError("");
+    setConnectionSuccess("");
+
+    try {
+      // PUT /api/connections/requests/{id}/accept
+      await acceptConnectionRequest(connectionRequestId);
+
+      setConnectionSuccess(
+        `Đã đồng ý kết nối với ${
+          request?.senderName ?? "người gửi"
+        }.`
+      );
+
+      await fetchConnectionRequests();
+    } catch (error) {
+      console.error("Accept connection request failed:", error);
+
+      setConnectionError(
+        getConnectionActionErrorMessage(error)
+      );
+    } finally {
+      setConnectionActionId(null);
+    }
+  }
+
+  async function handleRejectConnectionRequest(request) {
+    const connectionRequestId = request?.connectionRequestId;
+
+    if (!connectionRequestId) {
+      return;
+    }
+
+    setConnectionActionId(connectionRequestId);
+    setConnectionError("");
+    setConnectionSuccess("");
+
+    try {
+      // PUT /api/connections/requests/{id}/reject
+      await rejectConnectionRequest(connectionRequestId);
+
+      setConnectionSuccess(
+        `Đã từ chối yêu cầu kết nối từ ${
+          request?.senderName ?? "người gửi"
+        }.`
+      );
+
+      await fetchConnectionRequests();
+    } catch (error) {
+      console.error("Reject connection request failed:", error);
+
+      setConnectionError(
+        getConnectionActionErrorMessage(error)
+      );
+    } finally {
+      setConnectionActionId(null);
+    }
+  }
+
+  function getConnectionActionErrorMessage(error) {
+    if (error.status === 403) {
+      return "Chỉ người nhận yêu cầu mới được thực hiện thao tác này.";
+    }
+
+    if (error.status === 404) {
+      return "Yêu cầu kết nối không tồn tại.";
+    }
+
+    if (error.status === 409) {
+      return "Yêu cầu này không còn ở trạng thái chờ.";
+    }
+
+    return error.message || "Không thể xử lý yêu cầu kết nối.";
+  }
+
+  // =====================================================
+  // MESSENGER (MODULE 5 / BATCH 2)
+  // =====================================================
+
+  async function fetchConversations() {
+    setConversationsLoading(true);
+    setConversationsError("");
+
+    try {
+      // GET /api/conversations
+      const data = await getConversations();
+
+      setConversations(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Fetch conversations failed:", error);
+
+      setConversations([]);
+
+      setConversationsError(
+        error.message ||
+          "Không thể tải danh sách cuộc trò chuyện."
+      );
+    } finally {
+      setConversationsLoading(false);
+    }
+  }
+
+  function showMessenger() {
+    setPage("messenger");
+
+    setError("");
+    setSuccess("");
+
+    setSelectedConversation(null);
+    setSelectedConversationId(null);
+    setConversationDetail(null);
+    setConversationDetailError("");
+    setMessages([]);
+    setMessagesError("");
+
+    fetchConversations();
+  }
+
+  // Chọn cuộc trò chuyện: tải chi tiết (participant)
+  // và lịch sử tin nhắn từ Backend.
+  async function handleSelectConversation(conversation) {
+    const conversationId = conversation?.conversationId;
+
+    if (!conversationId) {
+      return;
+    }
+
+    setSelectedConversation(conversation);
+    setSelectedConversationId(conversationId);
+
+    setConversationDetail(null);
+    setConversationDetailError("");
+
+    setMessages([]);
+    setMessagesError("");
+
+    setConversationDetailLoading(true);
+    setMessagesLoading(true);
+
+    try {
+      // GET /api/conversations/{id}
+      const detail = await getConversation(conversationId);
+
+      setConversationDetail(detail);
+    } catch (error) {
+      console.error(
+        "Fetch conversation detail failed:",
+        error
+      );
+
+      setConversationDetail(null);
+
+      setConversationDetailError(
+        error.status === 403
+          ? "Bạn không phải participant của cuộc trò chuyện này."
+          : error.message ||
+            "Không thể tải chi tiết cuộc trò chuyện."
+      );
+    } finally {
+      setConversationDetailLoading(false);
+    }
+
+    try {
+      // GET /api/conversations/{conversationId}/messages
+      const data = await getConversationMessages(conversationId);
+
+      setMessages(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Fetch messages failed:", error);
+
+      setMessages([]);
+
+      setMessagesError(
+        error.status === 403
+          ? "Bạn không phải participant của cuộc trò chuyện này."
+          : error.message ||
+            "Không thể tải lịch sử tin nhắn."
+      );
+    } finally {
+      setMessagesLoading(false);
+    }
+  }
+
+  // =====================================================
+  // SIGNALR CHAT (MODULE 5 / BATCH 3)
+  // =====================================================
+
+  // Nhận tin nhắn realtime từ /hubs/chat.
+  // Tin nhắn đã được Hub lưu DB trước khi broadcast,
+  // nên người nhận offline vẫn xem được history.
+  function handleReceiveMessage(message) {
+    if (!message?.conversationId) {
+      return;
+    }
+
+    const conversationId = String(message.conversationId);
+
+    // Tin nhắn thuộc cuộc trò chuyện đang mở
+    // → thêm vào lịch sử tin nhắn hiển thị.
+    setMessages((previous) => {
+      if (
+        String(selectedConversationIdRef.current ?? "") !==
+        conversationId
+      ) {
+        return previous;
+      }
+
+      // Không thêm trùng tin nhắn đã có.
+      if (
+        previous.some(
+          (item) =>
+            String(item?.messageId ?? "") ===
+            String(message.messageId ?? "")
+        )
+      ) {
+        return previous;
+      }
+
+      return [
+        ...previous,
+        {
+          messageId: message.messageId,
+          senderId: message.senderId,
+          senderName: message.senderName,
+          content: message.content,
+          sentAt: message.sentAt,
+        },
+      ];
+    });
+
+    // Cập nhật tin nhắn cuối / số tin nhắn
+    // chưa đọc trong danh sách cuộc trò chuyện.
+    setConversations((previous) =>
+      previous.map((conversation) => {
+        if (
+          String(conversation?.conversationId ?? "") !==
+          conversationId
+        ) {
+          return conversation;
+        }
+
+        return {
+          ...conversation,
+          lastMessage: message.content,
+          lastMessageAt: message.sentAt,
+          unreadCount:
+            Number(conversation?.unreadCount ?? 0) + 1,
+        };
+      })
+    );
+  }
+
+  // Gửi tin nhắn realtime qua SignalR /hubs/chat.
+  // Người gửi lấy từ JWT trên Hub, không gửi từ client.
+  async function handleSendMessage(content) {
+    const conversationId = selectedConversationIdRef.current;
+
+    if (
+      !chatConnection ||
+      !conversationId ||
+      !content ||
+      sendingMessage
+    ) {
+      return;
+    }
+
+    setSendingMessage(true);
+    setMessagesError("");
+
+    try {
+      await chatConnection.invoke(
+        "SendMessage",
+        conversationId,
+        content
+      );
+    } catch (error) {
+      console.error("Send message failed:", error);
+
+      setMessagesError(
+        "Không thể gửi tin nhắn. Vui lòng thử lại."
+      );
+    } finally {
+      setSendingMessage(false);
+    }
+  }
+
+  // =====================================================
+  // NOTIFICATIONS (MODULE 5 / BATCH 4)
+  // =====================================================
+
+  async function fetchNotifications() {
+    setNotificationsLoading(true);
+    setNotificationsError("");
+
+    try {
+      // GET /api/notifications
+      const data = await getNotifications();
+
+      setNotifications(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Fetch notifications failed:", error);
+
+      setNotifications([]);
+
+      setNotificationsError(
+        error.message || "Không thể tải thông báo."
+      );
+    } finally {
+      setNotificationsLoading(false);
+    }
+  }
+
+  async function fetchUnreadNotifications() {
+    try {
+      // GET /api/notifications/unread
+      const data = await getUnreadNotifications();
+
+      setUnreadCount(Number(data?.unreadCount ?? 0) || 0);
+    } catch (error) {
+      console.error(
+        "Fetch unread notifications failed:",
+        error
+      );
+    }
+  }
+
+  function handleToggleNotifications() {
+    setNotificationsOpen((open) => {
+      const nextOpen = !open;
+
+      if (nextOpen) {
+        fetchNotifications();
+        fetchUnreadNotifications();
+      }
+
+      return nextOpen;
+    });
+  }
+
+  async function handleOpenNotification(notification) {
+    const notificationId = notification?.notificationId;
+
+    if (!notificationId) {
+      return;
+    }
+
+    setNotificationActionId(notificationId);
+
+    try {
+      // PUT /api/notifications/{id}/read
+      await markNotificationAsRead(notificationId);
+
+      setNotifications((previous) =>
+        previous.map((item) =>
+          String(item?.notificationId ?? "") ===
+          String(notificationId)
+            ? { ...item, isRead: true }
+            : item
+        )
+      );
+
+      await fetchUnreadNotifications();
+    } catch (error) {
+      console.error(
+        "Mark notification as read failed:",
+        error
+      );
+    } finally {
+      setNotificationActionId(null);
+    }
+  }
+
+  async function handleMarkAllNotificationsAsRead() {
+    setNotificationActionId("all");
+
+    try {
+      // PUT /api/notifications/read-all
+      await markAllNotificationsAsRead();
+
+      setNotifications((previous) =>
+        previous.map((item) => ({
+          ...item,
+          isRead: true,
+        }))
+      );
+
+      setUnreadCount(0);
+    } catch (error) {
+      console.error(
+        "Mark all notifications as read failed:",
+        error
+      );
+    } finally {
+      setNotificationActionId(null);
+    }
+  }
+
+  // =====================================================
+  // KHO TÀI LIỆU & SÁCH (MODULE 4 / BATCH 1)
+  // =====================================================
+
+  // Các hàm xử lý Library của Module 4
+  // tiếp tục đặt bên dưới phần này.========
+
+  async function fetchBooks(mode, filters) {
+
+    setBooksLoading(true);
+
+    setBooksError("");
+
+    const activeFilters = filters ?? bookFilters;
+
+    try {
+
+      // GET /api/library/books (có search/status)
+      // hoặc GET /api/library/books/me
+      const data =
+        mode === "mine"
+          ? await getMyBooks()
+          : await getBooks(activeFilters);
+
+      setBooks(data);
+
+    } catch (error) {
+
+      console.error(
+
+        "Fetch books failed:",
+
+        error
+
+      );
+
+      setBooks([]);
+
+      setBooksError(
+
+        error.message ||
+
+        "Không thể tải sàn đổi sách."
+
+      );
+
+    } finally {
+
+      setBooksLoading(false);
+
+    }
+
+  }
+
+
+  async function fetchBookMatches() {
+
+    setBookMatchesLoading(true);
+
+    setBookMatchesError("");
+
+    try {
+
+      // GET /api/library/books/exchange-matches
+      const data = await getExchangeMatches();
+
+      setBookMatches(data);
+
+    } catch (error) {
+
+      console.error(
+
+        "Fetch exchange matches failed:",
+
+        error
+
+      );
+
+      setBookMatches([]);
+
+      setBookMatchesError(
+
+        error.message ||
+
+        "Không thể tải chuỗi đổi sách."
+
+      );
+
+    } finally {
+
+      setBookMatchesLoading(false);
+
+    }
+
+  }
+
+
+  function showLibrary() {
+
+    setPage("library");
+
+    setError("");
+
+    setSuccess("");
+
+    setBooksSuccess("");
+
+    setDocumentsSuccess("");
+
+    setBookFormOpen(false);
+
+    setBookDetailOpen(false);
+
+    setDocumentFormOpen(false);
+
+    setDocumentDetailOpen(false);
+
+    fetchBooks(libraryMode);
+
+    fetchBookMatches();
+
+    fetchDocuments(documentMode);
+
+  }
+
+
+  // Chuyển giữa sàn đổi sách và kho tài liệu số.
+  function handleChangeLibrarySection(section) {
+
+    const targetSection = section === "documents"
+      ? "documents"
+      : "books";
+
+    setLibrarySection(targetSection);
+
+    setBooksSuccess("");
+
+    setDocumentsSuccess("");
+
+    setBookFormOpen(false);
+
+    setBookDetailOpen(false);
+
+    setDocumentFormOpen(false);
+
+    setDocumentDetailOpen(false);
+
+    if (targetSection === "documents") {
+      fetchDocuments(documentMode);
+    } else {
+      fetchBooks(libraryMode);
+      fetchBookMatches();
+    }
+
+  }
+
+
+  // Chuyển giữa tất cả bài đăng và bài đăng của tôi.
+  function handleChangeLibraryMode(mode) {
+
+    const targetMode = mode || "all";
+
+    setLibraryMode(targetMode);
+
+    setBooksSuccess("");
+
+    setBookFormOpen(false);
+
+    setBookDetailOpen(false);
+
+    fetchBooks(targetMode);
+
+  }
+
+
+  // Bộ lọc chỉ áp dụng cho GET /api/library/books.
+  function handleBookFilterChange(nextFilters) {
+
+    const filters = {
+
+      search: nextFilters.search ?? "",
+
+      status: nextFilters.status ?? "",
+
+    };
+
+    setBookFilters(filters);
+
+    setBooksSuccess("");
+
+        <HomePage
+          user={user}
+          onLogout={handleLogout}
+          onViewProfile={showProfile}
+          onSetupPreferences={showPreferences}
+          onViewMyPosts={showMyPosts}
+          onOpenMatching={showSmartMatching}
+          onOpenLostFound={showLostFound}
+          onOpenMessenger={showMessenger}
+        />
+
+    fetchBooks("all", filters);
+
+  }
+
+
+  function handleResetBookFilters() {
+
+    const filters = {
+
+      search: "",
+
+      status: "",
+
+    };
+
+    setBookFilters(filters);
+
+    setBooksSuccess("");
+
+    fetchBooks(libraryMode, filters);
+
+  }
+
+
+  function openBookForm(book) {
+
+    setEditingBook(book || null);
+
+    setBookFormOpen(true);
+
+    setBooksError("");
+
+    setBooksSuccess("");
+
+    setBookDetailOpen(false);
+
+  }
+
+
+  function closeBookForm() {
+
+    setBookFormOpen(false);
+
+    setEditingBook(null);
+
+  }
+
+
+  async function handleSubmitBook(formData) {
+
+    setBooksSaving(true);
+
+    setBooksError("");
+
+    setBooksSuccess("");
+
+    try {
+
+      if (editingBook) {
+
+        // PUT /api/library/books/{id}
+        await updateBook(editingBook.id, formData);
+
+        setBooksSuccess("Bài đổi sách đã được cập nhật.");
+
+      } else {
+
+        // POST /api/library/books
+        await createBook(formData);
+
+        setBooksSuccess("Bài đổi sách đã được đăng.");
+
+      }
+
+      closeBookForm();
+
+      await fetchBooks(libraryMode);
+
+      await fetchBookMatches();
+
+    } catch (error) {
+
+      console.error(
+
+        "Save book error:",
+
+        error
+
+      );
+
+      setBooksError(getBookErrorMessage(error));
+
+    } finally {
+
+      setBooksSaving(false);
+
+    }
+
+  }
+
+
+  async function handleDeleteBook(book) {
+
+    const confirmed = window.confirm(
+      "Xóa bài đổi sách này? Hành động không thể hoàn tác."
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setBooksSaving(true);
+
+    setBooksError("");
+
+    setBooksSuccess("");
+
+    try {
+
+      // DELETE /api/library/books/{id}
+      await deleteBook(book.id);
+
+      setBookDetailOpen(false);
+
+      setBooksSuccess("Bài đổi sách đã được xóa.");
+
+      await fetchBooks(libraryMode);
+
+      await fetchBookMatches();
+
+    } catch (error) {
+
+      console.error(
+
+        "Delete book error:",
+
+        error
+
+      );
+
+      setBooksError(getBookErrorMessage(error));
+
+    } finally {
+
+      setBooksSaving(false);
+
+    }
+
+  }
+
+
+  function getBookErrorMessage(error) {
+
+    if (error.status === 403) {
+      return "Bạn không phải chủ của bài đổi sách này.";
+    }
+
+    if (error.status === 404) {
+      return "Không tìm thấy bài đổi sách.";
+    }
+
+    if (error.status === 400) {
+      return "Dữ liệu không hợp lệ, vui lòng kiểm tra lại.";
+    }
+
+    return error.message || "Thao tác với bài đổi sách thất bại.";
+  }
+
+
+  async function handleOpenBookDetail(bookId) {
+
+    setBookDetailOpen(true);
+
+    setBookDetailLoading(true);
+
+    setBookDetailError("");
+
+    setBookDetail(null);
+
+    setBookFormOpen(false);
+
+    try {
+
+      // GET /api/library/books/{id}
+      const data = await getBookById(bookId);
+
+      setBookDetail(data);
+
+    } catch (error) {
+
+      console.error(
+
+        "Fetch book detail failed:",
+
+        error
+
+      );
+
+      setBookDetailError(getBookErrorMessage(error));
+
+    } finally {
+
+      setBookDetailLoading(false);
+
+    }
+
+  }
+
+
+  // Mở chi tiết bài đăng từ danh sách Exchange Match.
+  function handleOpenBookMatch(match) {
+
+    handleOpenBookDetail(match?.matchedPostId);
+
+  }
+
+
+  function closeBookDetail() {
+
+    setBookDetailOpen(false);
+
+    setBookDetail(null);
+
+  }
+
+
+  // =====================================================
+  // TÀI LIỆU SỐ (MODULE 4 / BATCH 2)
+  // =====================================================
+
+  async function fetchDocuments(mode, filters) {
+
+    setDocumentsLoading(true);
+
+    setDocumentsError("");
+
+    const activeFilters = filters ?? documentFilters;
+
+    try {
+
+      // "mine" = GET /api/library/documents/me
+      // "free" | "paid" = GET /api/library/documents?pricing=...
+      // "all" = GET /api/library/documents (có search / subject / pricing)
+      const targetMode = mode || "all";
+
+      let data;
+
+      if (targetMode === "mine") {
+
+        data = await getMyDocuments();
+
+      } else {
+
+        data = await getDocuments({
+          ...activeFilters,
+
+          pricing:
+            targetMode === "free"
+              ? "Free"
+              : targetMode === "paid"
+                ? "Paid"
+                : activeFilters.pricing,
+        });
+
+      }
+
+      setDocuments(data);
+
+    } catch (error) {
+
+      console.error(
+
+        "Fetch documents failed:",
+
+        error
+
+      );
+
+      setDocuments([]);
+
+      setDocumentsError(
+
+        error.message ||
+
+        "Không thể tải kho tài liệu."
+
+      );
+
+    } finally {
+
+      setDocumentsLoading(false);
+
+    }
+
+  }
+
+
+  // Chuyển giữa tất cả / miễn phí / trả phí / của tôi.
+  function handleChangeDocumentMode(mode) {
+
+    const targetMode = mode || "all";
+
+    setDocumentMode(targetMode);
+
+    setDocumentsSuccess("");
+
+    setDocumentFormOpen(false);
+
+    setDocumentDetailOpen(false);
+
+    fetchDocuments(targetMode);
+
+  }
+
+
+  // Bộ lọc chỉ áp dụng cho GET /api/library/documents.
+  function handleDocumentFilterChange(nextFilters) {
+
+    const filters = {
+
+      search: nextFilters.search ?? "",
+
+      subject: nextFilters.subject ?? "",
+
+      pricing: nextFilters.pricing ?? "",
+
+    };
+
+    setDocumentFilters(filters);
+
+    setDocumentsSuccess("");
+
+    if (documentMode === "mine") {
+      return;
+    }
+
+    // pricing đã được chọn qua chip Tài liệu nên
+    // đặt lại về rỗng để không lọc trùng hai lần.
+    if (filters.pricing) {
+      setDocumentMode("all");
+      fetchDocuments("all", {
+        ...filters,
+        pricing: "",
+      });
+      return;
+    }
+
+    fetchDocuments(documentMode, filters);
+
+  }
+
+
+  function handleResetDocumentFilters() {
+
+    const filters = {
+
+      search: "",
+
+      subject: "",
+
+      pricing: "",
+
+    };
+
+    setDocumentFilters(filters);
+
+    setDocumentsSuccess("");
+
+    fetchDocuments(documentMode, filters);
+
+  }
+
+
+  function openDocumentForm(document) {
+
+    setEditingDocument(document || null);
+
+    setDocumentFormOpen(true);
+
+    setDocumentsError("");
+
+    setDocumentsSuccess("");
+
+    setDocumentDetailOpen(false);
+
+  }
+
+
+  function closeDocumentForm() {
+
+    setDocumentFormOpen(false);
+
+    setEditingDocument(null);
+
+  }
+
+
+  async function handleSubmitDocument(formData) {
+
+    setDocumentsSaving(true);
+
+    setDocumentsError("");
+
+    setDocumentsSuccess("");
+
+    try {
+
+      if (editingDocument) {
+
+        // PUT /api/library/documents/{id}  — chỉ sửa metadata.
+        await updateDocument(editingDocument.id, formData);
+
+        setDocumentsSuccess("Tài liệu đã được cập nhật.");
+
+      } else {
+
+        // POST /api/library/documents  — multipart/form-data.
+        await createDocument(formData);
+
+        setDocumentsSuccess("Tài liệu đã được đăng tải.");
+
+      }
+
+      closeDocumentForm();
+
+      await fetchDocuments(documentMode);
+
+    } catch (error) {
+
+      console.error(
+
+        "Save document error:",
+
+        error
+
+      );
+
+      setDocumentsError(getDocumentErrorMessage(error));
+
+    } finally {
+
+      setDocumentsSaving(false);
+
+    }
+
+  }
+
+
+  async function handleDeleteDocument(document) {
+
+    const confirmed = window.confirm(
+      "Xóa tài liệu này? File tải lên cũng sẽ bị xóa và không thể khôi phục."
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDocumentsSaving(true);
+
+    setDocumentsError("");
+
+    setDocumentsSuccess("");
+
+    try {
+
+      // DELETE /api/library/documents/{id}
+      await deleteDocument(document.id);
+
+      setDocumentDetailOpen(false);
+
+      setDocumentsSuccess("Tài liệu đã được xóa.");
+
+      await fetchDocuments(documentMode);
+
+    } catch (error) {
+
+      console.error(
+
+        "Delete document error:",
+
+        error
+
+      );
+
+      setDocumentsError(getDocumentErrorMessage(error));
+
+    } finally {
+
+      setDocumentsSaving(false);
+
+    }
+
+  }
+
+
+  function getDocumentErrorMessage(error) {
+
+    if (error.status === 403) {
+      return "Bạn không phải chủ của tài liệu này.";
+    }
+
+    if (error.status === 404) {
+      return "Không tìm thấy tài liệu.";
+    }
+
+    // Backend trả về nguyên nhân cụ thể cho file lỗi.
+    if (error.status === 400) {
+      return (
+        error.message ||
+
+        "Tài liệu không hợp lệ, vui lòng kiểm tra lại file."
+      );
+    }
+
+    return error.message || "Thao tác với tài liệu thất bại.";
+  }
+
+
+  async function handleOpenDocumentDetail(documentId) {
+
+    setDocumentDetailOpen(true);
+
+    setDocumentDetailLoading(true);
+
+    setDocumentDetailError("");
+
+    setDocumentDetail(null);
+
+    setDocumentFormOpen(false);
+
+    resetDocumentReviews();
+
+    try {
+
+      // GET /api/library/documents/{id}
+      const data = await getDocumentById(documentId);
+
+      setDocumentDetail(data);
+
+      // GET /api/library/documents/{id}/reviews
+      await fetchDocumentReviews(documentId);
+
+    } catch (error) {
+
+      console.error(
+
+        "Fetch document detail failed:",
+
+        error
+
+      );
+
+      setDocumentDetailError(getDocumentErrorMessage(error));
+
+    } finally {
+
+      setDocumentDetailLoading(false);
+
+    }
+
+  }
+
+
+  function closeDocumentDetail() {
+
+    setDocumentDetailOpen(false);
+
+    setDocumentDetail(null);
+
+    setDocumentDownloadError("");
+
+    setDocumentDownloadSuccess("");
+
+    resetDocumentReviews();
+
+  }
+
+
+  // GET /api/library/documents/{id}/download
+  // Tài liệu miễn phí tải thẳng, tài liệu trả phí Backend
+  // kiểm tra điểm rồi mới trả file đã đóng dấu watermark.
+  async function handleDownloadDocument(document) {
+
+    if (!document?.id) {
+
+      return;
+
+    }
+
+    setDownloadingDocumentId(document.id);
+
+    setDocumentDownloadError("");
+
+    setDocumentDownloadSuccess("");
+
+    try {
+
+      const result = await downloadDocument(document.id);
+
+      saveDownloadedFile(
+        result,
+        document.fileName
+      );
+
+      setDocumentDownloadSuccess(
+        document.pricingType === "Paid"
+          ? `Đã tải tài liệu, đã trừ ${document.price} điểm.`
+          : "Đã tải tài liệu, file được đóng dấu watermark."
+      );
+
+    } catch (error) {
+
+      console.error("Download document failed:", error);
+
+      setDocumentDownloadError(
+        getDocumentDownloadErrorMessage(error)
+      );
+
+    } finally {
+
+      setDownloadingDocumentId("");
+
+    }
+
+  }
+
+
+  function getDocumentDownloadErrorMessage(error) {
+
+    if (error.status === 404) {
+      return "Tài liệu hoặc file tài liệu không còn tồn tại.";
+    }
+
+    // Backend trả về nguyên nhân cụ thể cho tài liệu trả phí.
+    if (error.status === 400) {
+      return (
+        error.message ||
+        "Bạn không đủ điểm để tải tài liệu này."
+      );
+    }
+
+    if (error.status === 409) {
+      return (
+        error.message ||
+        "Hệ thống điểm chưa sẵn sàng, chưa thể tải tài liệu trả phí."
+      );
+    }
+
+    if (error.status === 401) {
+      return "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.";
+    }
+
+    return (
+      error.message ||
+      "Tải tài liệu thất bại, vui lòng thử lại."
+    );
+
+  }
+
+
+  // =====================================================
+  // ĐÁNH GIÁ TÀI LIỆU (MODULE 4 / BATCH 4)
+  // =====================================================
+
+  // GET /api/library/documents/{id}/reviews
+  async function fetchDocumentReviews(documentId) {
+
+    if (!documentId) {
+      return;
+    }
+
+    setDocumentReviewsLoading(true);
+
+    setDocumentReviewsError("");
+
+    try {
+
+      const data = await getDocumentReviews(documentId);
+
+      setDocumentReviews(data);
+
+    } catch (error) {
+
+      console.error("Fetch document reviews failed:", error);
+
+      setDocumentReviews([]);
+
+      setDocumentReviewsError(
+        getDocumentReviewErrorMessage(error)
+      );
+
+    } finally {
+
+      setDocumentReviewsLoading(false);
+
+    }
+
+  }
+
+
+  // Xóa trạng thái đánh giá khi đóng hoặc đổi tài liệu đang xem.
+  function resetDocumentReviews() {
+
+    setDocumentReviews([]);
+
+    setDocumentReviewsError("");
+
+    setDocumentReviewsSuccess("");
+
+    setDocumentReviewFormError("");
+
+    setEditingDocumentReviewId(null);
+
+    setDeletingDocumentReviewId(null);
+
+  }
+
+
+  function getDocumentReviewErrorMessage(error) {
+
+    if (error.status === 403) {
+      return "Bạn không phải người viết đánh giá này.";
+    }
+
+    if (error.status === 404) {
+      return "Không tìm thấy tài liệu hoặc đánh giá.";
+    }
+
+    // Backend trả về nguyên nhân cụ thể khi điểm không hợp lệ.
+    if (error.status === 400) {
+      return (
+        error.message ||
+        "Điểm đánh giá phải nằm trong khoảng 1 đến 5."
+      );
+    }
+
+    // Mỗi người chỉ đánh giá một tài liệu đúng một lần.
+    if (error.status === 409) {
+      return (
+        error.message ||
+        "Bạn đã đánh giá tài liệu này rồi, hãy sửa đánh giá của bạn."
+      );
+    }
+
+    return error.message || "Thao tác với đánh giá thất bại.";
+
+  }
+
+
+  // Backend trả kèm điểm trung bình và số đánh giá mới
+  // sau khi tạo / sửa review.
+  function applyDocumentRatingSummary(rating, reviewCount) {
+
+    setDocumentDetail((previous) =>
+      previous
+        ? {
+            ...previous,
+            rating: Number(rating ?? 0),
+            reviewCount: Number(reviewCount ?? 0),
+          }
+        : previous
+    );
+
+  }
+
+
+  // Xóa review chỉ trả message nên tải lại chi tiết tài liệu
+  // để cập nhật điểm trung bình và số đánh giá.
+  async function refreshDocumentRatingSummary(documentId) {
+
+    if (!documentId) {
+      return;
+    }
+
+    try {
+
+      const data = await getDocumentById(documentId);
+
+      setDocumentDetail((previous) =>
+        previous?.id === data?.id ? data : previous
+      );
+
+    } catch (error) {
+
+      console.error(
+        "Refresh document rating failed:",
+        error
+      );
+
+    }
+
+  }
+
+
+  function handleEditDocumentReview(review) {
+
+    setEditingDocumentReviewId(review?.id ?? null);
+
+    setDocumentReviewsSuccess("");
+
+    setDocumentReviewFormError("");
+
+  }
+
+
+  function handleCancelEditDocumentReview() {
+
+    setEditingDocumentReviewId(null);
+
+    setDocumentReviewFormError("");
+
+  }
+
+
+  // POST /api/library/documents/{id}/reviews
+  async function handleSubmitDocumentReview(formData) {
+
+    const documentId = documentDetail?.id;
+
+    if (!documentId) {
+      return;
+    }
+
+    setDocumentReviewsSaving(true);
+
+    setDocumentReviewsSuccess("");
+
+    setDocumentReviewFormError("");
+
+    try {
+
+      const data = await createDocumentReview(
+        documentId,
+        formData
+      );
+
+      setDocumentReviewsSuccess(
+        "Đã ghi nhận đánh giá của bạn."
+      );
+
+      applyDocumentRatingSummary(
+        data?.documentRating,
+        data?.documentReviewCount
+      );
+
+      await fetchDocumentReviews(documentId);
+
+    } catch (error) {
+
+      console.error("Create document review failed:", error);
+
+      setDocumentReviewFormError(
+        getDocumentReviewErrorMessage(error)
+      );
+
+    } finally {
+
+      setDocumentReviewsSaving(false);
+
+    }
+
+  }
+
+
+  // PUT /api/library/reviews/{reviewId}
+  async function handleSubmitEditDocumentReview(formData) {
+
+    const reviewId = editingDocumentReviewId;
+
+    const documentId = documentDetail?.id;
+
+    if (!reviewId || !documentId) {
+      return;
+    }
+
+    setDocumentReviewsSaving(true);
+
+    setDocumentReviewsSuccess("");
+
+    setDocumentReviewFormError("");
+
+    try {
+
+      const data = await updateDocumentReview(
+        reviewId,
+        formData
+      );
+
+      setEditingDocumentReviewId(null);
+
+      setDocumentReviewsSuccess(
+        "Đánh giá của bạn đã được cập nhật."
+      );
+
+      applyDocumentRatingSummary(
+        data?.documentRating,
+        data?.documentReviewCount
+      );
+
+      await fetchDocumentReviews(documentId);
+
+    } catch (error) {
+
+      console.error("Update document review failed:", error);
+
+      setDocumentReviewFormError(
+        getDocumentReviewErrorMessage(error)
+      );
+
+    } finally {
+
+      setDocumentReviewsSaving(false);
+
+    }
+
+  }
+
+
+  // DELETE /api/library/reviews/{reviewId}
+  async function handleDeleteDocumentReview(review) {
+
+    if (!review?.id) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Xóa đánh giá của bạn? Hành động không thể hoàn tác."
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    const documentId = documentDetail?.id;
+
+    setDeletingDocumentReviewId(review.id);
+
+    setDocumentReviewsSuccess("");
+
+    setDocumentReviewFormError("");
+
+    try {
+
+      await deleteDocumentReview(review.id);
+
+      if (editingDocumentReviewId === review.id) {
+
+        setEditingDocumentReviewId(null);
+
+      }
+
+      setDocumentReviewsSuccess("Đánh giá đã được xóa.");
+
+      await refreshDocumentRatingSummary(documentId);
+
+      await fetchDocumentReviews(documentId);
+
+    } catch (error) {
+
+      console.error("Delete document review failed:", error);
+
+      setDocumentReviewFormError(
+        getDocumentReviewErrorMessage(error)
+      );
+
+    } finally {
+
+      setDeletingDocumentReviewId(null);
+
+    }
+
+  }
+
+
   // =====================================================
   // RENDER
   // =====================================================
@@ -2548,9 +4582,10 @@ export default function App() {
            onViewProfile={showProfile}
            onSetupPreferences={showPreferences}
 onViewMyPosts={showMyPosts}
-            onOpenMatching={showSmartMatching}
-            onOpenLostFound={showLostFound}
-          />
+onOpenMatching={showSmartMatching}
+           onOpenLostFound={showLostFound}
+           onOpenLibrary={showLibrary}
+         />
 
        )}
 
@@ -2769,23 +4804,274 @@ claimsItem={claimsItem}
                 onRejectClaim={handleRejectClaim}
                 onMarkReturned={handleMarkReturned}
                 onBack={showProfile}
-             />
+              />
 
-           </section>
-
-
-           <footer className="site-footer">
-             CampusEcomSystemMini · Student & Campus Utility
-           </footer>
-
-         </main>
-
-       )}
+            </section>
 
 
-       {/* ================================================
-           TRANG BÀI ĐĂNG
-       ================================================= */}
+            <footer className="site-footer">
+              CampusEcomSystemMini · Student & Campus Utility
+            </footer>
+
+          </main>
+
+        )}
+
+
+        {/* ================================================
+            TRANG KẾT NỐI (MODULE 5 / BATCH 1)
+        ================================================= */}
+
+        {page === "connections" && user && (
+
+          // GIỮ NGUYÊN TOÀN BỘ CODE TRANG KẾT NỐI Ở ĐÂY
+
+        )}
+
+        {/* ================================================
+            TRANG KHO TÀI LIỆU & SÁCH (MODULE 4)
+        ================================================= */}
+
+        {page === "library" && user && (
+
+          // GIỮ NGUYÊN TOÀN BỘ CODE TRANG KHO TÀI LIỆU & SÁCH Ở ĐÂY
+
+        )}
+
+          <main className="auth-page">
+
+            <div className="auth-background-shape shape-one" />
+
+            <div className="auth-background-shape shape-two" />
+
+
+            <header className="site-header">
+
+              <div className="brand">
+
+                <span className="brand-icon">
+                  C
+                </span>
+
+                <span>
+                  Campus
+                  <span className="brand-highlight">
+                    Ecom
+                  </span>
+                </span>
+              </div>
+
+              <span className="header-label">
+                STUDENT COMMUNITY
+              </span>
+            </header>
+
+            <section className="pref-main">
+
+              <ConnectionRequests
+                mode={connectionMode}
+                onChangeMode={handleConnectionModeChange}
+                requests={connectionRequests}
+                loading={connectionLoading}
+                error={connectionError}
+                success={connectionSuccess}
+                currentUserId={user?.id ?? user?.Id ?? ""}
+                actionId={connectionActionId}
+                receiverId={receiverId}
+                sending={sending}
+                sendError={sendError}
+                onReceiverIdChange={setReceiverId}
+                onSend={handleSendConnectionRequest}
+                onAccept={handleAcceptConnectionRequest}
+                onReject={handleRejectConnectionRequest}
+                onOpenMessenger={showMessenger}
+                onBack={showProfile}
+              />
+
+            </section>
+
+            <footer className="site-footer">
+              CampusEcomSystemMini · Student & Campus Utility
+            </footer>
+
+          </main>
+
+        )}
+
+        {/* ================================================
+            TRANG MESSENGER (MODULE 5 / BATCH 2)
+        ================================================= */}
+
+        {page === "messenger" && user && (
+
+          <main className="auth-page">
+
+            <div className="auth-background-shape shape-one" />
+
+            <div className="auth-background-shape shape-two" />
+
+            <header className="site-header">
+
+              <div className="brand">
+
+                <span className="brand-icon">
+                  C
+                </span>
+
+                <span>
+                  Campus
+                  <span className="brand-highlight">
+                    Ecom
+                  </span>
+                </span>
+              </div>
+
+              <span className="header-label">
+                STUDENT COMMUNITY
+              </span>
+     </header>
+
+
+            <section className="pref-main">
+
+              <MessengerPage
+                conversations={conversations}
+                loading={conversationsLoading}
+                error={conversationsError}
+                selectedConversation={selectedConversation}
+                selectedConversationId={selectedConversationId}
+                detail={conversationDetail}
+                detailLoading={conversationDetailLoading}
+                detailError={conversationDetailError}
+                messages={messages}
+                messagesLoading={messagesLoading}
+                messagesError={messagesError}
+                currentUserId={user?.id ?? user?.Id ?? ""}
+                chatConnected={chatConnected}
+                sendingMessage={sendingMessage}
+                onSendMessage={handleSendMessage}
+                unreadCount={unreadCount}
+                notifications={notifications}
+                notificationsLoading={notificationsLoading}
+                notificationsError={notificationsError}
+                notificationsOpen={notificationsOpen}
+                notificationActionId={notificationActionId}
+                onToggleNotifications={handleToggleNotifications}
+                onOpenNotification={handleOpenNotification}
+                onMarkAllNotificationsAsRead={handleMarkAllNotificationsAsRead}
+                onSelectConversation={handleSelectConversation}
+                onOpenConnections={showConnections}
+                onBack={showProfile}
+              />
+
+              <LibraryPage
+                section={librarySection}
+                onChangeSection={handleChangeLibrarySection}
+                count={
+                  librarySection === "documents"
+                    ? documents.length
+                    : books.length
+                }
+                success={
+                  librarySection === "documents"
+                    ? documentsSuccess
+                    : booksSuccess
+                }
+                onCreate={() =>
+                  librarySection === "documents"
+                    ? openDocumentForm(null)
+                    : openBookForm(null)
+                }
+                onBack={showProfile}
+                bookExchange={{
+                  mode: libraryMode,
+                  onChangeMode: handleChangeLibraryMode,
+                  books,
+                  user,
+                  loading: booksLoading,
+                  saving: booksSaving,
+                  error: booksError,
+                  filters: bookFilters,
+                  onFilterChange: handleBookFilterChange,
+                  onResetFilters: handleResetBookFilters,
+                  onEdit: openBookForm,
+                  onDelete: handleDeleteBook,
+                  onSubmitBook: handleSubmitBook,
+                  onOpenDetail: (book) =>
+                    handleOpenBookDetail(book.id),
+                  onCloseForm: closeBookForm,
+                  onCloseDetail: closeBookDetail,
+                  formOpen: bookFormOpen,
+                  formBook: editingBook,
+                  detailOpen: bookDetailOpen,
+                  detail: bookDetail,
+                  detailLoading: bookDetailLoading,
+                  detailError: bookDetailError,
+                  matches: bookMatches,
+                  matchesLoading: bookMatchesLoading,
+                  matchesError: bookMatchesError,
+                  onOpenMatch: handleOpenBookMatch,
+                }}
+                documentPanel={{
+                  mode: documentMode,
+                  onChangeMode: handleChangeDocumentMode,
+                  documents,
+                  user,
+                  loading: documentsLoading,
+                  saving: documentsSaving,
+                  error: documentsError,
+                  filters: documentFilters,
+                  onFilterChange: handleDocumentFilterChange,
+                  onResetFilters: handleResetDocumentFilters,
+                  onEdit: openDocumentForm,
+                  onDelete: handleDeleteDocument,
+                  onSubmitDocument: handleSubmitDocument,
+                  onOpenDetail: (document) =>
+                    handleOpenDocumentDetail(document.id),
+                  onDownload: handleDownloadDocument,
+                  onCloseForm: closeDocumentForm,
+                  onCloseDetail: closeDocumentDetail,
+                  formOpen: documentFormOpen,
+                  formDocument: editingDocument,
+                  detailOpen: documentDetailOpen,
+                  detail: documentDetail,
+                  detailLoading: documentDetailLoading,
+                  detailError: documentDetailError,
+                  downloadingId: downloadingDocumentId,
+                  downloadError: documentDownloadError,
+                  downloadSuccess: documentDownloadSuccess,
+                  reviews: documentReviews,
+                  reviewsLoading: documentReviewsLoading,
+                  reviewsError: documentReviewsError,
+                  reviewsSaving: documentReviewsSaving,
+                  reviewsSuccess: documentReviewsSuccess,
+                  reviewFormError: documentReviewFormError,
+                  editingReviewId: editingDocumentReviewId,
+                  deletingReviewId: deletingDocumentReviewId,
+                  onEditReview: handleEditDocumentReview,
+                  onCancelEditReview: handleCancelEditDocumentReview,
+                  onDeleteReview: handleDeleteDocumentReview,
+                  onSubmitReview: handleSubmitDocumentReview,
+                  onSubmitEditReview: handleSubmitEditDocumentReview,
+                }}
+              />
+              />
+
+            </section>
+
+
+            <footer className="site-footer">
+              CampusEcomSystemMini · Student & Campus Utility
+            </footer>
+
+          </main>
+
+        )}
+
+
+        {/* ================================================
+            TRANG BÀI ĐĂNG
+        ================================================= */}
 
        {page === "posts" && user && (
 

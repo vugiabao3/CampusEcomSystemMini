@@ -2,11 +2,14 @@ using CampusEcomSystemMini.Application.Interfaces;
 using CampusEcomSystemMini.Infrastructure.Data;
 using CampusEcomSystemMini.Infrastructure.Repositories;
 using CampusEcomSystemMini.Infrastructure.Security;
+using CampusEcomSystemMini.Infrastructure.Services;
+using CampusEcomSystemMini.Infrastructure.Services.Document;
+using CampusEcomSystemMini.Infrastructure.Services.Document.Points;
+using CampusEcomSystemMini.Infrastructure.Services.Notification;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using CampusEcomSystemMini.Infrastructure.Services;
- 
+
 namespace CampusEcomSystemMini.Infrastructure;
 
 public static class DependencyInjection
@@ -15,6 +18,10 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        // =========================================================
+        // DATABASE
+        // =========================================================
+
         services.AddDbContext<AppDbContext>(options =>
         {
             options.UseSqlServer(
@@ -22,13 +29,25 @@ public static class DependencyInjection
                     "DefaultConnection"));
         });
 
+        // =========================================================
+        // USER
+        // =========================================================
+
         services.AddScoped<
             IUserRepository,
             UserRepository>();
 
+        // =========================================================
+        // PREFERENCE / MATCHING
+        // =========================================================
+
         services.AddScoped<
             IPreferenceRepository,
             PreferenceRepository>();
+
+        // =========================================================
+        // POSTS
+        // =========================================================
 
         services.AddScoped<
             IPostRepository,
@@ -37,6 +56,10 @@ public static class DependencyInjection
         services.AddScoped<
             IPostLikeRepository,
             PostLikeRepository>();
+
+        // =========================================================
+        // LOST & FOUND
+        // =========================================================
 
         services.AddScoped<
             ILostFoundRepository,
@@ -50,7 +73,10 @@ public static class DependencyInjection
             IClaimRepository,
             ClaimRepository>();
 
-        // Gamification (Module 6)
+<<<<<<        // =========================================================
+        // MODULE 6 - GAMIFICATION
+        // =========================================================
+
         services.AddScoped<
             IGamificationPointTransactionRepository,
             GamificationPointTransactionRepository>();
@@ -59,27 +85,124 @@ public static class DependencyInjection
             IGamificationService,
             GamificationService>();
 
-        // Report (Module 6)
+        // =========================================================
+        // MODULE 6 - REPORT
+        // =========================================================
+
         services.AddScoped<
             IReportRepository,
             ReportRepository>();
+
+        // =========================================================
+        // MODULE 4 - BOOK EXCHANGE
+        // =========================================================
+
+        services.AddScoped<
+            IBookExchangeRepository,
+            BookExchangeRepository>();
+
+        // =========================================================
+        // MODULE 4 - DOCUMENT
+        // =========================================================
+
+        services.AddScoped<
+            IDocumentRepository,
+            DocumentRepository>();
+
+        services.AddScoped<
+            IDocumentStorage,
+            LocalDocumentStorage>();
+
+        services.AddScoped<
+            IDocumentFileValidator,
+            DocumentFileValidator>();
+
+        services.AddScoped<
+            IDocumentWatermarkService,
+            DocumentWatermarkService>();
+
+        // =========================================================
+        // MODULE 4 - DOCUMENT REVIEW
+        // =========================================================
+
+        services.AddScoped<
+            IDocumentReviewRepository,
+            DocumentReviewRepository>();
+
+        // =========================================================
+        // MODULE 6 - POINT SERVICE
+        // =========================================================
+
+        services.AddScoped<
+            IPointService,
+            UnavailablePointService>();
+
+        // =========================================================
+        // MODULE 5 - CONNECTION REQUEST
+        // =========================================================
+
+        services.AddScoped<
+            IConnectionRequestRepository,
+            ConnectionRequestRepository>();
+
+        // =========================================================
+        // MODULE 5 - CONVERSATION
+        // =========================================================
+
+        services.AddScoped<
+            IConversationRepository,
+            ConversationRepository>();
+
+        services.AddScoped<
+            IConversationParticipantRepository,
+            ConversationParticipantRepository>();
+
+        // =========================================================
+        // MODULE 5 - MESSAGE
+        // =========================================================
+
+        services.AddScoped<
+            IMessageRepository,
+            MessageRepository>();
+
+        // =========================================================
+        // MODULE 5 - NOTIFICATION
+        // =========================================================
+
+        services.AddScoped<
+            INotificationRepository,
+            NotificationRepository>();
+
+        services.AddScoped<
+            INotificationService,
+            NotificationService>();
+
+        // =========================================================
+        // SECURITY
+        // =========================================================
 
         services.AddScoped<
             IPasswordHasher,
             PasswordHasher>();
 
-            services.AddScoped<
-    IJwtTokenService,
-    JwtTokenService>();
+        services.AddScoped<
+            IJwtTokenService,
+            JwtTokenService>();
 
-      // Current user
+        // =========================================================
+        // CURRENT USER
+        // =========================================================
+
         services.AddHttpContextAccessor();
 
         services.AddScoped<
             ICurrentUserService,
             CurrentUserService>();
 
-        // Smart Matching (Module 2)
+        // =========================================================
+        // MODULE 2 - SMART MATCHING
+        // =========================================================
+
         services.AddScoped<
             IMatchingService,
             MatchingService>();

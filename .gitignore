@@ -426,3 +426,7 @@ FodyWeavers.xsd
 
 # Official VS Code C# Dev Kit Extension exclusion
 #*.lscache
+
+# File tai lieu upload cua MODULE_4 (khong commit file nhi phan)
+App_Data/
+

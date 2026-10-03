@@ -1,4 +1,5 @@
 using CampusEcomSystemMini.Application.Interfaces;
+using CampusEcomSystemMini.Application.Notifications;
 using CampusEcomSystemMini.Domain.Entities;
 using MediatR;
 
@@ -10,6 +11,9 @@ public class GetRoomMatchesHandler
     // Ngưỡng Smart Match của Module 2: dưới 40% không vào danh sách.
     private const double MinimumMatchScore = 40d;
 
+    // Ngưỡng tạo notification Room Match (MODULE_5 / BATCH 5).
+    private const double RoomMatchNotificationScore = 80d;
+
     // Ứng viên tìm trọ / ở ghép là người đã đăng bài nhóm Room
     // (Post.Type = "Room"), tái sử dụng dữ liệu Post của Module 1.
     private const string RoomPostType = "Room";
@@ -19,19 +23,25 @@ public class GetRoomMatchesHandler
     private readonly IPreferenceRepository _preferenceRepository;
     private readonly IPostRepository _postRepository;
     private readonly ICurrentUserService _currentUserService;
+    private readonly INotificationRepository _notificationRepository;
+    private readonly INotificationService _notificationService;
 
     public GetRoomMatchesHandler(
         IMatchingService matchingService,
         IUserRepository userRepository,
         IPreferenceRepository preferenceRepository,
         IPostRepository postRepository,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        INotificationRepository notificationRepository,
+        INotificationService notificationService)
     {
         _matchingService = matchingService;
         _userRepository = userRepository;
         _preferenceRepository = preferenceRepository;
         _postRepository = postRepository;
         _currentUserService = currentUserService;
+        _notificationRepository = notificationRepository;
+        _notificationService = notificationService;
     }
 
     public async Task<List<GetRoomMatchesResponse>> Handle(
@@ -103,6 +113,26 @@ public class GetRoomMatchesHandler
             if (matchScore < MinimumMatchScore)
             {
                 continue;
+            }
+
+            // MODULE_5 / BATCH 5: Room Match >= 80%
+            // → tạo notification cho người dùng đang
+            // đăng nhập. Không tạo trùng (user + type
+            // + related user).
+            if (matchScore >= RoomMatchNotificationScore &&
+                !await _notificationRepository.ExistsByUserAndRelatedIdAsync(
+                    currentUserId,
+                    NotificationTypes.RoomMatch,
+                    candidate.Id,
+                    cancellationToken))
+            {
+                await _notificationService.CreateNotificationAsync(
+                    currentUserId,
+                    NotificationTypes.RoomMatch,
+                    "Tìm trọ / Ở ghép phù hợp",
+                    $"Tìm thấy {candidate.FullName} phù hợp {matchScore:0.#}% cho nhu cầu tìm trọ / ở ghép của bạn.",
+                    candidate.Id,
+                    cancellationToken);
             }
 
             matches.Add(
