@@ -13,6 +13,7 @@ import ChangePassword from "./components/ChangePassword";
 import Preferences from "./components/Preferences";
 import PostsPage from "./components/PostsPage";
 import SmartMatching from "./components/SmartMatching";
+import LostFoundPage from "./components/LostFoundPage";
 
 import {
   getMe,
@@ -55,10 +56,16 @@ import {
   getRoomMatch,
 } from "./services/matchingService";
 
+import {
+  getLostFoundPosts,
+  getLostFoundMap,
+} from "./services/lostFoundService";
+
 import "./styles/auth.css";
 import "./styles/preferences.css";
 import "./styles/posts.css";
 import "./styles/matching.css";
+import "./styles/lostFound.css";
 
 export default function App() {
 
@@ -159,6 +166,25 @@ export default function App() {
   const [roomMatchDetailLoading, setRoomMatchDetailLoading] = useState(false);
 
   const [roomMatchDetailError, setRoomMatchDetailError] = useState("");
+
+  // =====================================================
+  // CAMPUS LOST & FOUND (MODULE 3)
+  // =====================================================
+
+  // "" | "Lost" | "Found" | "Returned"
+  const [lostFoundFilter, setLostFoundFilter] = useState("");
+
+  const [lostFoundItems, setLostFoundItems] = useState([]);
+
+  const [lostFoundLoading, setLostFoundLoading] = useState(false);
+
+  const [lostFoundError, setLostFoundError] = useState("");
+
+  const [lostFoundPins, setLostFoundPins] = useState([]);
+
+  const [lostFoundMapLoading, setLostFoundMapLoading] = useState(false);
+
+  const [lostFoundMapError, setLostFoundMapError] = useState("");
 
 
   // =====================================================
@@ -1441,6 +1467,121 @@ export default function App() {
 
 
   // =====================================================
+  // CAMPUS LOST & FOUND (MODULE 3)
+  // =====================================================
+
+  async function fetchLostFoundMap() {
+
+    setLostFoundMapLoading(true);
+
+    setLostFoundMapError("");
+
+    try {
+
+      // GET /api/lost-found/map
+      const data = await getLostFoundMap();
+
+      setLostFoundPins(data);
+
+    } catch (error) {
+
+      console.error(
+
+        "Fetch lost & found map failed:",
+
+        error
+
+      );
+
+      setLostFoundPins([]);
+
+      setLostFoundMapError(
+
+        error.message ||
+
+        "Không thể tải dữ liệu bản đồ Lost & Found."
+
+      );
+
+    } finally {
+
+      setLostFoundMapLoading(false);
+
+    }
+
+  }
+
+
+  async function fetchLostFound(filter) {
+
+    setLostFoundLoading(true);
+
+    setLostFoundError("");
+
+    try {
+
+      // GET /api/lost-found?type=... hoặc ?status=Returned
+      const data = await getLostFoundPosts(filter);
+
+      setLostFoundItems(data);
+
+    } catch (error) {
+
+      console.error(
+
+        "Fetch lost & found failed:",
+
+        error
+
+      );
+
+      setLostFoundItems([]);
+
+      setLostFoundError(
+
+        error.message ||
+
+        "Không thể tải dữ liệu Lost & Found."
+
+      );
+
+    } finally {
+
+      setLostFoundLoading(false);
+
+    }
+
+  }
+
+
+  function showLostFound() {
+
+    setPage("lost-found");
+
+    setError("");
+
+    setSuccess("");
+
+    setLostFoundFilter("");
+
+    fetchLostFound("");
+
+    fetchLostFoundMap();
+
+  }
+
+
+  // Backend là nơi lọc dữ liệu, không lọc lại ở React.
+  async function handleLostFoundFilterChange(filter) {
+
+    setLostFoundFilter(filter);
+
+    await fetchLostFound(filter);
+
+  }
+
+
+  // =====================================================
   // RENDER
   // =====================================================
 
@@ -1673,9 +1814,10 @@ export default function App() {
            onLogout={handleLogout}
            onViewProfile={showProfile}
            onSetupPreferences={showPreferences}
-           onViewMyPosts={showMyPosts}
-           onOpenMatching={showSmartMatching}
-         />
+onViewMyPosts={showMyPosts}
+            onOpenMatching={showSmartMatching}
+            onOpenLostFound={showLostFound}
+          />
 
        )}
 
@@ -1740,9 +1882,72 @@ export default function App() {
                 roomDetailError={roomMatchDetailError}
                 onOpenRoomDetail={handleOpenRoomMatchDetail}
                 onCloseRoomDetail={closeRoomMatchDetail}
-                onEditPreferences={showPreferences}
+onEditPreferences={showPreferences}
                 onBack={showProfile}
               />
+
+           </section>
+
+
+           <footer className="site-footer">
+             CampusEcomSystemMini · Student & Campus Utility
+           </footer>
+
+         </main>
+
+       )}
+
+
+       {/* ================================================
+           TRANG CAMPUS LOST & FOUND
+       ================================================= */}
+
+       {page === "lost-found" && user && (
+
+         <main className="auth-page">
+
+           <div className="auth-background-shape shape-one" />
+
+           <div className="auth-background-shape shape-two" />
+
+
+           <header className="site-header">
+
+             <div className="brand">
+
+               <span className="brand-icon">
+                 C
+               </span>
+
+               <span>
+                 Campus
+                 <span className="brand-highlight">
+                   Ecom
+                 </span>
+               </span>
+
+             </div>
+
+             <span className="header-label">
+               STUDENT COMMUNITY
+             </span>
+
+           </header>
+
+
+           <section className="pref-main">
+
+             <LostFoundPage
+               filter={lostFoundFilter}
+               onFilterChange={handleLostFoundFilterChange}
+               items={lostFoundItems}
+               loading={lostFoundLoading}
+               error={lostFoundError}
+               pins={lostFoundPins}
+               mapLoading={lostFoundMapLoading}
+               mapError={lostFoundMapError}
+               onBack={showProfile}
+             />
 
            </section>
 

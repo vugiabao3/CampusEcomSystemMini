@@ -19,6 +19,8 @@ public class AppDbContext : DbContext
 
     public DbSet<PostLike> PostLikes {get;set;}
 
+    public DbSet<LostFoundRecord> LostFoundRecords {get;set;}
+
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
     {
@@ -72,6 +74,19 @@ entity.HasOne<Post>()
                 .WithMany()
                 .HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<LostFoundRecord>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            // Mỗi bài đăng Lost / Found chỉ có một bản ghi Lost & Found.
+            entity.HasIndex(x => x.PostId).IsUnique();
+
+            entity.HasOne<Post>()
+                .WithMany()
+                .HasForeignKey(x => x.PostId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

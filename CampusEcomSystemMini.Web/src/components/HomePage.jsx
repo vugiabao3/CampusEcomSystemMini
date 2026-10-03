@@ -5,6 +5,7 @@ export default function HomePage({
   onSetupPreferences,
   onViewMyPosts,
   onOpenMatching,
+  onOpenLostFound,
 }) {
   const fullName =
     user?.fullName ??
@@ -223,7 +224,7 @@ export default function HomePage({
               </button>
             </div>
 
-            <div className="module-card">
+            <div className="module-card module-card--active">
               <span>02</span>
               <h3>
                 Lost & Found
@@ -231,6 +232,14 @@ export default function HomePage({
               <p>
                 Tìm kiếm và trả lại đồ thất lạc.
               </p>
+
+              <button
+                className="module-card-action"
+                type="button"
+                onClick={onOpenLostFound}
+              >
+                Xem đồ thất lạc
+              </button>
             </div>
 
             <div className="module-card">
