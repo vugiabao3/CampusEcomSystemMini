@@ -50,6 +50,11 @@ public static class DependencyInjection
             IClaimRepository,
             ClaimRepository>();
 
+        // Book Exchange (Module 4 / BATCH 1)
+        services.AddScoped<
+            IBookExchangeRepository,
+            BookExchangeRepository>();
+
         services.AddScoped<
             IPasswordHasher,
             PasswordHasher>();
