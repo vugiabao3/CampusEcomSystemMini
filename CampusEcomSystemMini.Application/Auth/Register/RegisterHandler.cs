@@ -1,3 +1,4 @@
+using CampusEcomSystemMini.Application.Gamification;
 using CampusEcomSystemMini.Application.Interfaces;
 using CampusEcomSystemMini.Domain.Entities;
 using MediatR;
@@ -9,13 +10,16 @@ public class RegisterHandler
 {
     private readonly IUserRepository _userRepository;
     private readonly IPasswordHasher _passwordHasher;
+    private readonly IGamificationService _gamificationService;
 
     public RegisterHandler(
         IUserRepository userRepository,
-        IPasswordHasher passwordHasher)
+        IPasswordHasher passwordHasher,
+        IGamificationService gamificationService)
     {
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
+        _gamificationService = gamificationService;
     }
 
     public async Task<RegisterResponse> Handle(
@@ -54,6 +58,13 @@ public class RegisterHandler
             cancellationToken);
 
         await _userRepository.SaveChangesAsync(
+            cancellationToken);
+
+        // Module 6 Integration: đăng ký nhận điểm khởi đầu.
+        // Điểm và lịch sử điểm ghi qua GamificationService.
+        await _gamificationService.ApplyRuleAsync(
+            user.Id,
+            GamificationPointRules.RegisterReason,
             cancellationToken);
 
         return new RegisterResponse(

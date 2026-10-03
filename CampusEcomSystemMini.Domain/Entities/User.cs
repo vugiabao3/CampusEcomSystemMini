@@ -1,5 +1,7 @@
 namespace CampusEcomSystemMini.Domain.Entities;
 
+using CampusEcomSystemMini.Domain.Enums;
+
 public class User
 {
     public Guid Id { get; set; }
@@ -16,8 +18,12 @@ public class User
 
     public string Role { get; set; } = "User";
 
+    // Active / Blocked (MODULE_6 Admin).
+    // Chỉ Admin đổi được trạng thái này.
+    public string Status { get; set; } = UserStatus.Active;
+
     // Điểm uy tín hiện tại (MODULE_6 Gamification).
-    // Được cập nhật qua Gamification use case, mặc định 0.
+    // Được cập nhật qua GamificationService, mặc định 0.
     public int ReputationPoints { get; set; }
 
     public DateTime CreatedAt { get; set; }

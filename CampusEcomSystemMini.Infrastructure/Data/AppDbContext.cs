@@ -27,6 +27,8 @@ public class AppDbContext : DbContext
 
     public DbSet<GamificationPointTransaction> GamificationPointTransactions {get;set;}
 
+    public DbSet<Report> Reports {get;set;}
+
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
     {
@@ -125,6 +127,26 @@ entity.HasOne<Post>()
             entity.HasOne<User>()
                 .WithMany()
                 .HasForeignKey(x => x.ClaimantUserId)
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<Report>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            entity.HasIndex(x => x.PostId);
+
+            // SQL Server không cho phép nhiều đường cascade
+            // (Users -> Posts -> Reports và Users -> Reports),
+            // nên báo cáo không cascade trực tiếp từ User.
+            entity.HasOne<Post>()
+                .WithMany()
+                .HasForeignKey(x => x.PostId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(x => x.ReporterId)
                 .OnDelete(DeleteBehavior.NoAction);
         });
 

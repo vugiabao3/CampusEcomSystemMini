@@ -56,6 +56,15 @@ public static class DependencyInjection
             GamificationPointTransactionRepository>();
 
         services.AddScoped<
+            IGamificationService,
+            GamificationService>();
+
+        // Report (Module 6)
+        services.AddScoped<
+            IReportRepository,
+            ReportRepository>();
+
+        services.AddScoped<
             IPasswordHasher,
             PasswordHasher>();
 
