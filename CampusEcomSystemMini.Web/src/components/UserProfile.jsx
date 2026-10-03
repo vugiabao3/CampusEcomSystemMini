@@ -1,4 +1,7 @@
 // Form hiển thị thông tin tài khoản 
+import MyPoints from "./gamification/MyPoints.jsx";
+import PointHistory from "./gamification/PointHistory.jsx";
+
 export default function UserProfile({
   user,
   onLogout,
@@ -9,6 +12,12 @@ export default function UserProfile({
   onOpenMatching,
   loading,
   error,
+  points,
+  pointsLoading,
+  pointsError,
+  history,
+  historyLoading,
+  historyError,
 }) {
   const fullName = user?.fullName ?? user?.FullName ?? "Sinh viên";
   const email = user?.email ?? user?.Email ?? "";
@@ -58,6 +67,20 @@ export default function UserProfile({
         <span>Avatar</span>
         <strong className="user-id">{avatarUrl || "Chưa cập nhật"}</strong>
       </div>
+
+      <div className="profile-divider" />
+
+      <MyPoints
+        points={points}
+        loading={pointsLoading}
+        error={pointsError}
+      />
+
+      <PointHistory
+        history={history}
+        loading={historyLoading}
+        error={historyError}
+      />
 
       <div className="profile-divider" />
 

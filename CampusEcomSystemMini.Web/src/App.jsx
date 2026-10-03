@@ -68,11 +68,17 @@ import {
   markReturned,
 } from "./services/lostFoundService";
 
+import {
+  getMyPoints,
+  getPointHistory,
+} from "./services/gamificationService";
+
 import "./styles/auth.css";
 import "./styles/preferences.css";
 import "./styles/posts.css";
 import "./styles/matching.css";
 import "./styles/lostFound.css";
+import "./styles/gamification.css";
 
 export default function App() {
 
@@ -230,6 +236,25 @@ export default function App() {
   // Yêu cầu đang được duyệt / từ chối, hoặc "returned"
   // khi chủ bài đăng xác nhận đã trả đồ.
   const [claimsActionId, setClaimsActionId] = useState(null);
+
+
+  // =====================================================
+  // GAMIFICATION (MODULE 6 / BATCH 1)
+  // =====================================================
+
+  // Điểm uy tín hiện tại.
+  const [points, setPoints] = useState(null);
+
+  const [pointsLoading, setPointsLoading] = useState(false);
+
+  const [pointsError, setPointsError] = useState("");
+
+  // Lịch sử cộng / trừ điểm.
+  const [pointHistory, setPointHistory] = useState([]);
+
+  const [pointHistoryLoading, setPointHistoryLoading] = useState(false);
+
+  const [pointHistoryError, setPointHistoryError] = useState("");
 
 
   // =====================================================
@@ -503,6 +528,81 @@ export default function App() {
   }
 
 
+  async function fetchGamification() {
+
+    setPointsLoading(true);
+
+    setPointsError("");
+
+    setPointHistoryLoading(true);
+
+    setPointHistoryError("");
+
+    try {
+
+      // GET /api/gamification/me
+      setPoints(await getMyPoints());
+
+    } catch (error) {
+
+      console.error(
+
+        "Fetch my points failed:",
+
+        error
+
+      );
+
+      setPoints(null);
+
+      setPointsError(
+
+        error.message ||
+
+        "Không thể tải điểm uy tín."
+
+      );
+
+    } finally {
+
+      setPointsLoading(false);
+
+    }
+
+    try {
+
+      // GET /api/gamification/history
+      setPointHistory(await getPointHistory());
+
+    } catch (error) {
+
+      console.error(
+
+        "Fetch point history failed:",
+
+        error
+
+      );
+
+      setPointHistory([]);
+
+      setPointHistoryError(
+
+        error.message ||
+
+        "Không thể tải lịch sử điểm."
+
+      );
+
+    } finally {
+
+      setPointHistoryLoading(false);
+
+    }
+
+  }
+
+
   function showProfile() {
 
     setPage("profile");
@@ -512,6 +612,8 @@ export default function App() {
     setSuccess("");
 
     fetchProfile();
+
+    fetchGamification();
 
   }
 
@@ -2689,8 +2791,14 @@ claimsItem={claimsItem}
                     onViewMyPosts={showMyPosts}
                     onOpenMatching={showSmartMatching}
                     loading={loading}
-                   error={error}
-                 />
+                    error={error}
+                    points={points}
+                    pointsLoading={pointsLoading}
+                    pointsError={pointsError}
+                    history={pointHistory}
+                    historyLoading={pointHistoryLoading}
+                    historyError={pointHistoryError}
+                  />
 
                )}
 

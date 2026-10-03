@@ -25,6 +25,8 @@ public class AppDbContext : DbContext
 
     public DbSet<Claim> Claims {get;set;}
 
+    public DbSet<GamificationPointTransaction> GamificationPointTransactions {get;set;}
+
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
     {
@@ -123,6 +125,21 @@ entity.HasOne<Post>()
             entity.HasOne<User>()
                 .WithMany()
                 .HasForeignKey(x => x.ClaimantUserId)
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<GamificationPointTransaction>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            entity.HasIndex(x => x.UserId);
+
+            // SQL Server không cho phép nhiều đường cascade
+            // (Users -> Posts -> Claims -> ... và Users -> GamificationPointTransactions),
+            // nên lịch sử điểm không cascade trực tiếp từ User.
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.NoAction);
         });
     }

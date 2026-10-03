@@ -16,6 +16,10 @@ public class User
 
     public string Role { get; set; } = "User";
 
+    // Điểm uy tín hiện tại (MODULE_6 Gamification).
+    // Được cập nhật qua Gamification use case, mặc định 0.
+    public int ReputationPoints { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }
