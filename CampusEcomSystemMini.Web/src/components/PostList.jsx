@@ -30,9 +30,12 @@ export default function PostList({
   posts,
   currentUserId,
   loading,
+  postLikes,
+  likingPostId,
   onOpenDetail,
   onEdit,
   onDelete,
+  onToggleLike,
 }) {
   if (loading) {
     return (
@@ -61,6 +64,8 @@ export default function PostList({
           String(ownerId).toLowerCase() ===
             String(currentUserId).toLowerCase();
 
+        const likeInfo = postLikes?.[post.id];
+
         return (
           <article className="post-card" key={post.id}>
             <header className="post-card-head">
@@ -88,6 +93,30 @@ export default function PostList({
             </p>
 
             <footer className="post-card-actions">
+              <button
+                type="button"
+                className={
+                  likeInfo?.likedByMe
+                    ? "post-like post-like--active"
+                    : "post-like"
+                }
+                onClick={() => onToggleLike(post.id)}
+                disabled={likingPostId === post.id}
+                aria-pressed={Boolean(likeInfo?.likedByMe)}
+              >
+                <span aria-hidden="true">
+                  {likeInfo?.likedByMe ? "♥" : "♡"}
+                </span>
+
+                {likeInfo?.count ?? 0}
+
+                <span className="post-like-label">
+                  {likeInfo?.likedByMe
+                    ? "Đã thích"
+                    : "Thích"}
+                </span>
+              </button>
+
               <button
                 className="post-action post-action--view"
                 type="button"

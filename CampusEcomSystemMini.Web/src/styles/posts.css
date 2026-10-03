@@ -168,6 +168,72 @@
 
 
 /* =====================================================
+   NÚT THÍCH
+===================================================== */
+
+.post-like {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid #e1e6ef;
+  border-radius: 9px;
+  color: #45536a;
+  background: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  transition:
+    color 0.15s,
+    border-color 0.15s,
+    background 0.15s;
+}
+
+.post-like span[aria-hidden] {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.post-like:hover {
+  border-color: #f3c4c4;
+  color: #d94343;
+  background: #fff5f5;
+}
+
+.post-like--active {
+  border-color: #f3c4c4;
+  color: #d94343;
+  background: #fff5f5;
+}
+
+.post-like-label {
+  color: inherit;
+}
+
+.btn--like {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #45536a;
+  background: #ffffff;
+  box-shadow: none;
+  border: 1px solid #e1e6ef;
+}
+
+.btn--like:hover {
+  border-color: #f3c4c4;
+  color: #d94343;
+  background: #fff5f5;
+}
+
+.btn--like-active {
+  border-color: #f3c4c4;
+  color: #d94343;
+  background: #fff5f5;
+}
+
+
+/* =====================================================
    MODAL
 ===================================================== */
 

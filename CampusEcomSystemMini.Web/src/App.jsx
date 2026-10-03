@@ -42,6 +42,9 @@ import {
   createPost,
   updatePost,
   deletePost,
+  likePost,
+  unlikePost,
+  getPostLikes,
 } from "./services/postService";
 
 import "./styles/auth.css";
@@ -101,6 +104,11 @@ export default function App() {
   const [detailLoading, setDetailLoading] = useState(false);
 
   const [detailError, setDetailError] = useState("");
+
+  // Lượt thích theo từng bài đăng: { [postId]: { count, likedByMe } }
+  const [postLikes, setPostLikes] = useState({});
+
+  const [likingPostId, setLikingPostId] = useState(null);
 
 
   // =====================================================
@@ -711,6 +719,66 @@ export default function App() {
   // BÀI ĐĂNG (POSTS)
   // =====================================================
 
+  // Rút gọn danh sách lượt thích thành số lượng + đã thích hay chưa.
+  function summarizeLikes(likes) {
+
+    const list = likes ?? [];
+
+    const currentUserId = user?.id ?? user?.Id ?? "";
+
+    return {
+
+      count: list.length,
+
+      likedByMe:
+        Boolean(currentUserId) &&
+        list.some(
+          (like) =>
+            String(like.userId).toLowerCase() ===
+            String(currentUserId).toLowerCase()
+        ),
+
+    };
+
+  }
+
+
+  async function loadPostLikes(list) {
+
+    const entries = await Promise.all(
+      (list ?? []).map(async (post) => {
+
+        try {
+
+          // GET /api/posts/{id}/likes
+          const likes = await getPostLikes(post.id);
+
+          return [post.id, summarizeLikes(likes)];
+
+        } catch (error) {
+
+          console.error(
+
+            "Fetch post likes failed:",
+
+            post.id,
+
+            error
+
+          );
+
+          return [post.id, { count: 0, likedByMe: false }];
+
+        }
+
+      })
+    );
+
+    return Object.fromEntries(entries);
+
+  }
+
+
   async function fetchPosts(mode) {
 
     setPostsLoading(true);
@@ -725,6 +793,8 @@ export default function App() {
 
       setPosts(data);
 
+      setPostLikes(await loadPostLikes(data));
+
     } catch (error) {
 
       console.error(
@@ -734,6 +804,10 @@ export default function App() {
         error
 
       );
+
+      setPosts([]);
+
+      setPostLikes({});
 
       setPostsError(
 
@@ -973,6 +1047,68 @@ export default function App() {
     setDetailOpen(false);
 
     setDetailPost(null);
+
+  }
+
+
+  async function handleToggleLike(postId) {
+
+    const current = postLikes[postId] ?? {
+
+      count: 0,
+
+      likedByMe: false,
+
+    };
+
+    setLikingPostId(postId);
+
+    setPostsError("");
+
+    try {
+
+      if (current.likedByMe) {
+
+        // DELETE /api/posts/{id}/like
+        await unlikePost(postId);
+
+      } else {
+
+        // POST /api/posts/{id}/like
+        await likePost(postId);
+
+      }
+
+      const likes = await getPostLikes(postId);
+
+      setPostLikes((previous) => ({
+        ...previous,
+        [postId]: summarizeLikes(likes),
+      }));
+
+    } catch (error) {
+
+      console.error(
+
+        "Toggle like error:",
+
+        error
+
+      );
+
+      setPostsError(
+
+        error.message ||
+
+        "Thao tác thích bài đăng thất bại."
+
+      );
+
+    } finally {
+
+      setLikingPostId(null);
+
+    }
 
   }
 
@@ -1269,9 +1405,12 @@ export default function App() {
                detailPost={detailPost}
                detailLoading={detailLoading}
                detailError={detailError}
+               postLikes={postLikes}
+               likingPostId={likingPostId}
                onCreate={() => openPostForm(null)}
                onEdit={openPostForm}
                onDelete={handleDeletePost}
+               onToggleLike={handleToggleLike}
                onSubmitPost={handleSubmitPost}
                onOpenDetail={handleOpenPostDetail}
                onCloseForm={closePostForm}

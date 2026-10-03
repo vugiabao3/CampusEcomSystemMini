@@ -26,6 +26,9 @@ export default function PostDetailModal({
   loading,
   error,
   isOwner,
+  likeInfo,
+  liking,
+  onToggleLike,
   onEdit,
   onDelete,
   onClose,
@@ -85,6 +88,24 @@ export default function PostDetailModal({
               )}
 
             <div className="posts-actions">
+              <button
+                type="button"
+                className={
+                  likeInfo?.likedByMe
+                    ? "btn btn--like btn--like-active"
+                    : "btn btn--like"
+                }
+                onClick={() => onToggleLike(post.id)}
+                disabled={liking}
+                aria-pressed={Boolean(likeInfo?.likedByMe)}
+              >
+                {likeInfo?.likedByMe ? "♥" : "♡"}
+
+                {likeInfo?.likedByMe
+                  ? `Đã thích (${likeInfo.count})`
+                  : `Thích (${likeInfo?.count ?? 0})`}
+              </button>
+
               {isOwner && (
                 <>
                   <button

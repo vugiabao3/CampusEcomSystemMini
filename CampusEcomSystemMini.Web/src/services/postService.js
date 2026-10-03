@@ -58,3 +58,27 @@ export async function deletePost(id) {
     method: "DELETE",
   });
 }
+
+// API: POST /api/posts/{id}/like
+// Thích bài đăng (mỗi người chỉ thích một lần)
+export async function likePost(id) {
+  return request(`/api/posts/${id}/like`, {
+    method: "POST",
+  });
+}
+
+// API: DELETE /api/posts/{id}/like
+// Bỏ thích bài đăng của chính mình
+export async function unlikePost(id) {
+  return request(`/api/posts/${id}/like`, {
+    method: "DELETE",
+  });
+}
+
+// API: GET /api/posts/{id}/likes
+// Danh sách những người đã thích bài đăng
+export async function getPostLikes(id) {
+  return request(`/api/posts/${id}/likes`, {
+    method: "GET",
+  });
+}

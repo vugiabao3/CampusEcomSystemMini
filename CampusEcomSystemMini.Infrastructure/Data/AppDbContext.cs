@@ -17,6 +17,8 @@ public class AppDbContext : DbContext
 
     public DbSet<Post> Posts {get;set;}
 
+    public DbSet<PostLike> PostLikes {get;set;}
+
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
     {
@@ -48,6 +50,28 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<PostLike>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            // Một người chỉ thích một bài đăng đúng một lần.
+            entity.HasIndex(x => new { x.PostId, x.UserId })
+                .IsUnique();
+
+entity.HasOne<Post>()
+                .WithMany()
+                .HasForeignKey(x => x.PostId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // SQL Server không cho phép nhiều đường cascade
+            // (Users -> Posts -> PostLikes và Users -> PostLikes),
+            // nên lượt thích không cascade trực tiếp từ User.
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.NoAction);
         });
     }
 }

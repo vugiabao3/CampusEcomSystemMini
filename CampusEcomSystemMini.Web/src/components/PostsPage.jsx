@@ -19,9 +19,12 @@ export default function PostsPage({
   detailPost,
   detailLoading,
   detailError,
+  postLikes,
+  likingPostId,
   onCreate,
   onEdit,
   onDelete,
+  onToggleLike,
   onSubmitPost,
   onOpenDetail,
   onCloseForm,
@@ -109,9 +112,12 @@ export default function PostsPage({
         posts={posts}
         currentUserId={currentUserId}
         loading={loading}
+        postLikes={postLikes}
+        likingPostId={likingPostId}
         onOpenDetail={onOpenDetail}
         onEdit={onEdit}
         onDelete={onDelete}
+        onToggleLike={onToggleLike}
       />
 
       {formOpen && (
@@ -131,6 +137,9 @@ export default function PostsPage({
           loading={detailLoading}
           error={detailError}
           isOwner={isDetailOwner}
+          likeInfo={postLikes?.[detailPost?.id]}
+          liking={Boolean(detailPost) && likingPostId === detailPost.id}
+          onToggleLike={onToggleLike}
           onEdit={onEdit}
           onDelete={onDelete}
           onClose={onCloseDetail}

@@ -3,6 +3,9 @@ using CampusEcomSystemMini.Application.Posts.DeletePost;
 using CampusEcomSystemMini.Application.Posts.GetMyPosts;
 using CampusEcomSystemMini.Application.Posts.GetPostById;
 using CampusEcomSystemMini.Application.Posts.GetPosts;
+using CampusEcomSystemMini.Application.Posts.Likes.GetPostLikes;
+using CampusEcomSystemMini.Application.Posts.Likes.LikePost;
+using CampusEcomSystemMini.Application.Posts.Likes.UnlikePost;
 using CampusEcomSystemMini.Application.Posts.UpdatePost;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -100,6 +103,60 @@ public class PostsController : ControllerBase
     {
         var result = await _mediator.Send(
             new DeletePostCommand(id),
+            cancellationToken);
+
+        if (result is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(result);
+    }
+
+    [HttpPost("{id:guid}/like")]
+    public async Task<ActionResult<LikePostResponse>> LikePost(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(
+            new LikePostCommand(id),
+            cancellationToken);
+
+        // Không tồn tại bài đăng hoặc đã thích trước đó.
+        if (result is null)
+        {
+            return Conflict(
+                "Post does not exist or is already liked.");
+        }
+
+        return Ok(result);
+    }
+
+    [HttpDelete("{id:guid}/like")]
+    public async Task<ActionResult<UnlikePostResponse>> UnlikePost(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(
+            new UnlikePostCommand(id),
+            cancellationToken);
+
+        // Không có lượt thích của người đang đăng nhập.
+        if (result is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(result);
+    }
+
+    [HttpGet("{id:guid}/likes")]
+    public async Task<ActionResult<List<GetPostLikesResponse>>> GetPostLikes(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(
+            new GetPostLikesQuery(id),
             cancellationToken);
 
         if (result is null)

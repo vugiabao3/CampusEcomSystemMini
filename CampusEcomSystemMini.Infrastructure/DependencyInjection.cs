@@ -35,6 +35,10 @@ public static class DependencyInjection
             PostRepository>();
 
         services.AddScoped<
+            IPostLikeRepository,
+            PostLikeRepository>();
+
+        services.AddScoped<
             IPasswordHasher,
             PasswordHasher>();
 
