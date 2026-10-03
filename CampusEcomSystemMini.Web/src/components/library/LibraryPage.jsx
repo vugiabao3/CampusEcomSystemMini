@@ -1,61 +1,43 @@
-import BookExchangeDetail from "./BookExchangeDetail.jsx";
-import BookExchangeFilter from "./BookExchangeFilter.jsx";
-import BookExchangeForm from "./BookExchangeForm.jsx";
-import BookExchangeList from "./BookExchangeList.jsx";
-import BookExchangeMatches from "./BookExchangeMatches.jsx";
+import BookExchangePanel from "./BookExchangePanel.jsx";
+import DocumentPanel from "./DocumentPanel.jsx";
 
-// Trang KHO TÀI LIỆU & SÁCH — MODULE 4 / BATCH 1.
+// Trang KHO TÀI LIỆU & SÁCH — MODULE 4.
 //
-// Sàn đổi sách
-//   ↓
-// GET /api/library/books           (tất cả bài đăng, có filter)
-// GET /api/library/books/me        (bài đăng của tôi)
-// GET /api/library/books/{id}      (chi tiết)
-// GET /api/library/books/exchange-matches
-// POST /api/library/books
-// PUT  /api/library/books/{id}
-// DELETE /api/library/books/{id}
+// [Sàn đổi sách]  → Batch 1: /api/library/books
+// [Tài liệu số]   → Batch 2: /api/library/documents
+//
+// Tải tài liệu, đánh giá và giao dịch điểm thuộc các batch sau.
+const SECTIONS = [
+  { value: "books", label: "Sàn đổi sách", title: "Sàn đổi sách" },
+  {
+    value: "documents",
+    label: "Tài liệu số",
+    title: "Kho tài liệu số",
+  },
+];
+
+const SECTION_HINTS = {
+  books:
+    "Đăng sách bạn đang có và sách bạn đang tìm, hệ thống tự ghép các bài đăng đổi sách phù hợp.",
+  documents:
+    "Chia sẻ tài liệu học tập với sinh viên trong trường. Tài liệu trả phí được tải bằng điểm.",
+};
+
 export default function LibraryPage({
-  mode,
-  onChangeMode,
-  books,
-  user,
-  loading,
-  saving,
-  error,
-  success,
-  filters,
-  onFilterChange,
-  onResetFilters,
+  section,
+  onChangeSection,
+  count,
   onCreate,
-  onEdit,
-  onDelete,
-  onSubmitBook,
-  onOpenDetail,
-  onCloseForm,
-  onCloseDetail,
-  formOpen,
-  formBook,
-  detailOpen,
-  detail,
-  detailLoading,
-  detailError,
-  matches,
-  matchesLoading,
-  matchesError,
-  onOpenMatch,
+  success,
   onBack,
+  bookExchange,
+  documentPanel,
 }) {
-  const currentUserId = user?.id ?? user?.Id ?? "";
+  const isDocuments = section === "documents";
 
-  const isMine = mode === "mine";
-
-  const detailOwnerId = detail?.userId ?? detail?.UserId ?? "";
-
-  const isDetailOwner =
-    Boolean(currentUserId) &&
-    String(detailOwnerId).toLowerCase() ===
-      String(currentUserId).toLowerCase();
+  const activeSection =
+    SECTIONS.find((item) => item.value === section) ??
+    SECTIONS[0];
 
   return (
     <section className="pref-card posts-card library-page">
@@ -63,19 +45,16 @@ export default function LibraryPage({
         <div>
           <span className="eyebrow">KHO TÀI LIỆU & SÁCH</span>
 
-          <h1 className="pref-title">
-            Sàn đổi sách
-          </h1>
+          <h1 className="pref-title">{activeSection.title}</h1>
 
           <p className="pref-subtitle">
-            Đăng sách bạn đang có và sách bạn đang tìm,
-            hệ thống tự ghép các bài đăng đổi sách phù hợp.
+            {SECTION_HINTS[activeSection.value]}
           </p>
         </div>
 
         <div className="posts-head-actions">
           <span className="pref-status pref-status--ready">
-            {books?.length ?? 0} bài đăng
+            {count} {isDocuments ? "tài liệu" : "bài đăng"}
           </span>
 
           <button
@@ -83,12 +62,14 @@ export default function LibraryPage({
             type="button"
             onClick={onCreate}
           >
-            Đăng đổi sách
+            {isDocuments
+              ? "Đăng tải tài liệu"
+              : "Đăng đổi sách"}
           </button>
         </div>
       </div>
 
-      <div className="posts-toolbar">
+      <div className="library-tabs">
         <button
           className="text-button"
           type="button"
@@ -98,40 +79,23 @@ export default function LibraryPage({
         </button>
 
         <div className="posts-filter-chips">
-          <button
-            type="button"
-            className={
-              isMine ? "posts-chip" : "posts-chip posts-chip--active"
-            }
-            aria-pressed={!isMine}
-            onClick={() => onChangeMode("all")}
-          >
-            Tất cả bài đăng
-          </button>
-
-          <button
-            type="button"
-            className={
-              isMine
-                ? "posts-chip posts-chip--active"
-                : "posts-chip"
-            }
-            aria-pressed={isMine}
-            onClick={() => onChangeMode("mine")}
-          >
-            Bài đăng của tôi
-          </button>
+          {SECTIONS.map((item) => (
+            <button
+              key={item.value}
+              type="button"
+              className={
+                section === item.value
+                  ? "posts-chip posts-chip--active"
+                  : "posts-chip"
+              }
+              aria-pressed={section === item.value}
+              onClick={() => onChangeSection(item.value)}
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
       </div>
-
-      {/* Bộ lọc chỉ áp dụng cho GET /api/library/books */}
-      {!isMine && (
-        <BookExchangeFilter
-          filters={filters}
-          onChange={onFilterChange}
-          onReset={onResetFilters}
-        />
-      )}
 
       {success && (
         <div className="message message-success" role="status">
@@ -139,55 +103,10 @@ export default function LibraryPage({
         </div>
       )}
 
-      <BookExchangeList
-        books={books}
-        loading={loading}
-        error={error}
-        currentUserId={currentUserId}
-        onOpenDetail={onOpenDetail}
-        onEdit={onEdit}
-        onDelete={onDelete}
-      />
-
-      <div className="book-match-section">
-        <span className="posts-filter-label">
-          Exchange Match
-        </span>
-
-        <p className="lost-note">
-          Chuỗi đổi sách được ghép từ các bài đăng của bạn:
-          một người có sách bạn cần và đang tìm sách bạn có
-          (đổi trực tiếp), hoặc chuỗi A → B → C → A.
-        </p>
-
-        <BookExchangeMatches
-          matches={matches}
-          loading={matchesLoading}
-          error={matchesError}
-          onOpenDetail={onOpenMatch}
-        />
-      </div>
-
-      {formOpen && (
-        <BookExchangeForm
-          book={formBook}
-          saving={saving}
-          error={error}
-          onSubmit={onSubmitBook}
-          onClose={onCloseForm}
-        />
-      )}
-
-      {detailOpen && (
-        <BookExchangeDetail
-          book={detail}
-          loading={detailLoading}
-          error={detailError}
-          isOwner={isDetailOwner}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onClose={onCloseDetail}
-        />
+      {isDocuments ? (
+        <DocumentPanel {...documentPanel} />
+      ) : (
+        <BookExchangePanel {...bookExchange} />
       )}
     </section>
   );

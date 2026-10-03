@@ -27,7 +27,11 @@ export async function request(path, options = {}) {
   const token = getToken();
 
   const headers = {
-    ...(options.body ? { "Content-Type": "application/json" } : {}),
+    // FormData phải để trình duyệt tự gắn Content-Type
+    // kèm boundary, nếu gán application/json sẽ không parse được.
+    ...(options.body && !(options.body instanceof FormData)
+      ? { "Content-Type": "application/json" }
+      : {}),
     ...(options.headers || {}),
   };
 

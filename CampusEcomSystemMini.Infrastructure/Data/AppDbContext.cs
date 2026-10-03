@@ -27,6 +27,8 @@ public class AppDbContext : DbContext
 
     public DbSet<BookExchangePost> BookExchangePosts {get;set;}
 
+    public DbSet<Document> Documents {get;set;}
+
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
     {
@@ -137,6 +139,30 @@ entity.HasOne<Post>()
             entity.HasIndex(x => x.UserId);
 
             entity.HasIndex(x => x.Status);
+
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Document>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            // Danh sách tài liệu của tôi lấy theo người đăng,
+            // nên index UserId cho truy vấn GET /api/library/documents/me.
+            entity.HasIndex(x => x.UserId);
+
+            // UI lọc tài liệu theo Free / Paid.
+            entity.HasIndex(x => x.PricingType);
+
+            entity.Property(x => x.Price)
+                .HasPrecision(18, 2);
+
+            // Điểm đánh giá 1–5, do batch Reviews cập nhật.
+            entity.Property(x => x.Rating)
+                .HasPrecision(3, 2);
 
             entity.HasOne<User>()
                 .WithMany()
