@@ -23,6 +23,8 @@ public class AppDbContext : DbContext
 
     public DbSet<SecretQuestion> SecretQuestions {get;set;}
 
+    public DbSet<Claim> Claims {get;set;}
+
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
     {
@@ -102,6 +104,26 @@ entity.HasOne<Post>()
                 .WithMany()
                 .HasForeignKey(x => x.PostId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Claim>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            entity.HasIndex(x => x.PostId);
+
+            entity.HasOne<Post>()
+                .WithMany()
+                .HasForeignKey(x => x.PostId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // SQL Server không cho phép nhiều đường cascade
+            // (Users -> Posts -> Claims và Users -> Claims),
+            // nên yêu cầu nhận đồ không cascade trực tiếp từ User.
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(x => x.ClaimantUserId)
+                .OnDelete(DeleteBehavior.NoAction);
         });
     }
 }

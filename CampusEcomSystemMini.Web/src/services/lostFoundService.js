@@ -65,3 +65,23 @@ export async function getSecretQuestion(postId) {
     method: "GET",
   });
 }
+
+// API: POST /api/lost-found/{postId}/claims
+// Người bị mất đồ gửi câu trả lời để nhận lại đồ.
+// Backend tự xác minh, không gửi userId.
+export async function createClaim(postId, { answer }) {
+  return request(`/api/lost-found/${postId}/claims`, {
+    method: "POST",
+    body: JSON.stringify({
+      answer,
+    }),
+  });
+}
+
+// API: GET /api/lost-found/{postId}/claims
+// Chỉ chủ bài đăng Found được xem danh sách yêu cầu nhận đồ.
+export async function getClaims(postId) {
+  return request(`/api/lost-found/${postId}/claims`, {
+    method: "GET",
+  });
+}

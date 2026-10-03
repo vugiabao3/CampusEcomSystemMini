@@ -8,6 +8,7 @@ export default function LostFoundList({
   error,
   currentUserId,
   onOpenSecretQuestion,
+  onOpenClaims,
 }) {
   if (loading) {
     return (
@@ -41,6 +42,7 @@ export default function LostFoundList({
           item={item}
           currentUserId={currentUserId}
           onOpenSecretQuestion={onOpenSecretQuestion}
+          onOpenClaims={onOpenClaims}
         />
       ))}
     </div>

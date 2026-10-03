@@ -118,6 +118,105 @@
   margin-top: 16px;
 }
 
+.lost-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.lost-card-actions .match-card-action {
+  margin-top: 0;
+}
+
+.lost-card-action {
+  padding: 10px 14px;
+  border: none;
+  border-radius: 10px;
+  color: #45536a;
+  background: #f1f3f7;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.lost-card-action:hover {
+  background: #e4e7ee;
+}
+
+
+/* =====================================================
+   YÊU CẦU NHẬN ĐỒ
+===================================================== */
+
+.claim-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.claim-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid #e7ebf3;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.claim-item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.claim-item-name {
+  color: #17243a;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.claim-item-you {
+  color: #94a0b4;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.claim-item-time {
+  color: #8a96aa;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.claim-status {
+  flex: 0 0 auto;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.claim-status--pending {
+  color: #b54708;
+  background: #fef0c7;
+}
+
+.claim-status--approved {
+  color: #027a48;
+  background: #d3f8df;
+}
+
+.claim-status--rejected {
+  color: #b42318;
+  background: #fee4e2;
+}
+
 .lost-note {
   margin: 14px 0 0;
   padding: 12px 14px;

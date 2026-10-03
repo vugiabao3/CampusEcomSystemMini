@@ -3,6 +3,8 @@ import LostFoundList from "./LostFoundList.jsx";
 import LostFoundMap from "./LostFoundMap.jsx";
 import SecretQuestionForm from "./SecretQuestionForm.jsx";
 import SecretQuestionView from "./SecretQuestionView.jsx";
+import ClaimForm from "./ClaimForm.jsx";
+import ClaimList from "./ClaimList.jsx";
 
 // Trang Campus Lost & Found.
 // filter = "" | "Lost" | "Found" | "Returned"
@@ -26,9 +28,23 @@ export default function LostFoundPage({
   secretLoading,
   secretSaving,
   secretError,
+  claimItem,
+  claimQuestion,
+  claimSaving,
+  claimError,
+  success,
   onOpenSecretQuestion,
   onCloseSecretQuestion,
   onSubmitSecretQuestion,
+  onAnswerSecretQuestion,
+  onSubmitClaim,
+  onCloseClaim,
+  claimsItem,
+  claims,
+  claimsLoading,
+  claimsError,
+  onOpenClaims,
+  onCloseClaims,
   onBack,
 }) {
   const currentUserId = user?.id ?? user?.Id ?? "";
@@ -61,6 +77,12 @@ export default function LostFoundPage({
         onChange={onFilterChange}
       />
 
+      {success && (
+        <div className="message message-success" role="status">
+          {success}
+        </div>
+      )}
+
       <div className="posts-toolbar">
         <button
           className="text-button"
@@ -77,6 +99,7 @@ export default function LostFoundPage({
         error={error}
         currentUserId={currentUserId}
         onOpenSecretQuestion={onOpenSecretQuestion}
+        onOpenClaims={onOpenClaims}
       />
 
       <div className="lost-map-section">
@@ -107,8 +130,68 @@ export default function LostFoundPage({
           question={secretQuestion}
           loading={secretLoading}
           error={secretError}
+          onAnswer={onAnswerSecretQuestion}
           onClose={onCloseSecretQuestion}
         />
+      )}
+
+      {claimItem && (
+        <ClaimForm
+          item={claimItem}
+          question={claimQuestion}
+          saving={claimSaving}
+          error={claimError}
+          onSubmit={onSubmitClaim}
+          onClose={onCloseClaim}
+        />
+      )}
+
+      {claimsItem && (
+        <div
+          className="modal-backdrop"
+          onClick={onCloseClaims}
+        >
+          <div
+            className="modal-card"
+            role="dialog"
+            aria-modal="true"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              className="modal-close"
+              type="button"
+              aria-label="Đóng"
+              onClick={onCloseClaims}
+            >
+              ×
+            </button>
+
+            <div className="form-heading">
+              <span className="eyebrow">YÊU CẦU NHẬN ĐỒ</span>
+
+              <h2>Danh sách yêu cầu</h2>
+
+              <p>{claimsItem.title}</p>
+            </div>
+
+            <ClaimList
+              claims={claims}
+              loading={claimsLoading}
+              error={claimsError}
+              currentUserId={currentUserId}
+            />
+
+            <div className="posts-actions">
+              <button
+                className="btn btn--ghost"
+                type="button"
+                onClick={onCloseClaims}
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </section>
   );

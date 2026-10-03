@@ -61,6 +61,8 @@ import {
   getLostFoundMap,
   createSecretQuestion,
   getSecretQuestion,
+  createClaim,
+  getClaims,
 } from "./services/lostFoundService";
 
 import "./styles/auth.css";
@@ -188,6 +190,8 @@ export default function App() {
 
   const [lostFoundMapError, setLostFoundMapError] = useState("");
 
+  const [lostFoundSuccess, setLostFoundSuccess] = useState("");
+
   // Câu hỏi bí mật: "create" (chủ bài đăng Found)
   // hoặc "view" (người bị mất đồ xem câu hỏi).
   const [secretMode, setSecretMode] = useState(null);
@@ -201,6 +205,24 @@ export default function App() {
   const [secretSaving, setSecretSaving] = useState(false);
 
   const [secretError, setSecretError] = useState("");
+
+  // Yêu cầu nhận đồ (MODULE_3 / BATCH 3)
+  const [claimItem, setClaimItem] = useState(null);
+
+  const [claimQuestion, setClaimQuestion] = useState("");
+
+  const [claimSaving, setClaimSaving] = useState(false);
+
+  const [claimError, setClaimError] = useState("");
+
+  // Danh sách yêu cầu nhận đồ của chủ bài đăng Found
+  const [claimsItem, setClaimsItem] = useState(null);
+
+  const [claims, setClaims] = useState([]);
+
+  const [claimsLoading, setClaimsLoading] = useState(false);
+
+  const [claimsError, setClaimsError] = useState("");
 
 
   // =====================================================
@@ -1578,6 +1600,8 @@ export default function App() {
 
     setSuccess("");
 
+    setLostFoundSuccess("");
+
     setLostFoundFilter("");
 
     fetchLostFound("");
@@ -1589,6 +1613,8 @@ export default function App() {
 
   // Backend là nơi lọc dữ liệu, không lọc lại ở React.
   async function handleLostFoundFilterChange(filter) {
+
+    setLostFoundSuccess("");
 
     setLostFoundFilter(filter);
 
@@ -1728,6 +1754,161 @@ export default function App() {
     }
 
     return error.message || "Không thể lưu câu hỏi bí mật.";
+  }
+
+
+  // =====================================================
+  // YÊU CẦU NHẬN ĐỒ (MODULE 3 / BATCH 3)
+  // =====================================================
+
+  function closeClaim() {
+
+    setClaimItem(null);
+
+    setClaimQuestion("");
+
+    setClaimError("");
+
+    setClaimSaving(false);
+
+  }
+
+
+  // Từ câu hỏi bí mật sang form gửi câu trả lời.
+  function handleAnswerSecretQuestion() {
+
+    setSecretMode(null);
+
+    setSecretItem(null);
+
+    setClaimItem(secretItem);
+
+    setClaimQuestion(secretQuestion);
+
+    setClaimError("");
+
+  }
+
+
+  async function handleSubmitClaim({ answer }) {
+
+    setClaimSaving(true);
+
+    setClaimError("");
+
+    try {
+
+      // POST /api/lost-found/{postId}/claims
+      const data = await createClaim(claimItem.postId, { answer });
+
+      closeClaim();
+
+      closeSecretQuestion();
+
+      setLostFoundSuccess(
+        `Đã gửi yêu cầu nhận đồ (${data?.status ?? "Pending"}).`
+      );
+
+    } catch (error) {
+
+      console.error(
+
+        "Create claim failed:",
+
+        error
+
+      );
+
+      setClaimError(getClaimErrorMessage(error));
+
+    } finally {
+
+      setClaimSaving(false);
+
+    }
+
+  }
+
+
+  function getClaimErrorMessage(error) {
+    // Backend chỉ trả lời sai khi câu trả lời không khớp.
+    if (error.status === 400) {
+      return "Câu trả lời không đúng với câu hỏi bí mật.";
+    }
+
+    if (error.status === 409) {
+      return "Người nhặt đồ chưa tạo câu hỏi bí mật cho bài đăng này.";
+    }
+
+    if (error.status === 403) {
+      return "Bạn không thể gửi yêu cầu nhận đồ cho bài đăng của mình.";
+    }
+
+    return error.message || "Không thể gửi yêu cầu nhận đồ.";
+  }
+
+
+  function closeClaims() {
+
+    setClaimsItem(null);
+
+    setClaims([]);
+
+    setClaimsError("");
+
+    setClaimsLoading(false);
+
+  }
+
+
+  async function handleOpenClaims(item) {
+
+    setClaimsItem(item);
+
+    setClaims([]);
+
+    setClaimsError("");
+
+    setClaimsLoading(true);
+
+    try {
+
+      // GET /api/lost-found/{postId}/claims
+      const data = await getClaims(item.postId);
+
+      setClaims(data);
+
+    } catch (error) {
+
+      console.error(
+
+        "Fetch claims failed:",
+
+        error
+
+      );
+
+      setClaimsError(getClaimsErrorMessage(error));
+
+    } finally {
+
+      setClaimsLoading(false);
+
+    }
+
+  }
+
+
+  function getClaimsErrorMessage(error) {
+    if (error.status === 403) {
+      return "Bạn không phải chủ bài đăng này.";
+    }
+
+    if (error.status === 409) {
+      return "Bài đăng này không nhận yêu cầu nhận đồ.";
+    }
+
+    return error.message || "Không thể tải yêu cầu.";
   }
 
 
@@ -2106,6 +2287,20 @@ onEditPreferences={showPreferences}
                onOpenSecretQuestion={handleOpenSecretQuestion}
                onCloseSecretQuestion={closeSecretQuestion}
                onSubmitSecretQuestion={handleSubmitSecretQuestion}
+               onAnswerSecretQuestion={handleAnswerSecretQuestion}
+               claimItem={claimItem}
+               claimQuestion={claimQuestion}
+               claimSaving={claimSaving}
+               claimError={claimError}
+               success={lostFoundSuccess}
+               onSubmitClaim={handleSubmitClaim}
+               onCloseClaim={closeClaim}
+               claimsItem={claimsItem}
+               claims={claims}
+               claimsLoading={claimsLoading}
+               claimsError={claimsError}
+               onOpenClaims={handleOpenClaims}
+               onCloseClaims={closeClaims}
                onBack={showProfile}
              />
 

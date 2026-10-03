@@ -1,3 +1,5 @@
+using CampusEcomSystemMini.Application.LostFound.Claims.CreateClaim;
+using CampusEcomSystemMini.Application.LostFound.Claims.GetClaims;
 using CampusEcomSystemMini.Application.LostFound.GetLostFound;
 using CampusEcomSystemMini.Application.LostFound.GetMap;
 using CampusEcomSystemMini.Application.LostFound.SecretQuestions.CreateSecretQuestion;
@@ -102,5 +104,76 @@ public class LostFoundController : ControllerBase
         }
 
         return Ok(result);
+    }
+
+    // POST /api/lost-found/{postId}/claims
+    [HttpPost("{postId:guid}/claims")]
+    public async Task<ActionResult<CreateClaimResponse>> CreateClaim(
+        Guid postId,
+        CreateClaimCommand command,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(
+            command with { PostId = postId },
+            cancellationToken);
+
+        switch (result.Outcome)
+        {
+            // Bài đăng không tồn tại.
+            case CreateClaimOutcome.PostNotFound:
+                return NotFound();
+
+            // Chỉ bài đăng Found mới nhận được yêu cầu nhận đồ.
+            case CreateClaimOutcome.NotFoundPostType:
+                return Conflict(
+                    "Claims are only available for Found posts.");
+
+            // Người nhặt đồ không tự gửi yêu cầu nhận lại đồ.
+            case CreateClaimOutcome.IsFinder:
+                return Forbid();
+
+            // Chưa có câu hỏi bí mật nên chưa thể xác minh.
+            case CreateClaimOutcome.NoSecretQuestion:
+                return Conflict(
+                    "The finder has not created a secret question yet.");
+
+            // Câu trả lời không khớp với câu hỏi bí mật.
+            case CreateClaimOutcome.InvalidAnswer:
+                return BadRequest(
+                    "The answer does not match the secret question.");
+
+            default:
+                return Created(
+                    $"/api/lost-found/{postId}/claims/{result.Response!.ClaimId}",
+                    result.Response);
+        }
+    }
+
+    // GET /api/lost-found/{postId}/claims
+    [HttpGet("{postId:guid}/claims")]
+    public async Task<ActionResult<List<GetClaimsResponse>>> GetClaims(
+        Guid postId,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(
+            new GetClaimsQuery(postId),
+            cancellationToken);
+
+        switch (result.Outcome)
+        {
+            case GetClaimsOutcome.PostNotFound:
+                return NotFound();
+
+            case GetClaimsOutcome.NotFoundPostType:
+                return Conflict(
+                    "Claims are only available for Found posts.");
+
+            // Chỉ chủ bài đăng Found được xem yêu cầu nhận đồ.
+            case GetClaimsOutcome.NotOwner:
+                return Forbid();
+
+            default:
+                return Ok(result.Claims);
+        }
     }
 }

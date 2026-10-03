@@ -40,6 +40,7 @@ export default function LostFoundCard({
   item,
   currentUserId,
   onOpenSecretQuestion,
+  onOpenClaims,
 }) {
   const title = item?.title ?? "";
   const description = item?.description ?? "";
@@ -107,15 +108,27 @@ export default function LostFoundCard({
       </div>
 
       {isFound && (
-        <button
-          className="match-card-action"
-          type="button"
-          onClick={() => onOpenSecretQuestion(item)}
-        >
-          {isOwner
-            ? "Tạo câu hỏi bí mật"
-            : "Xem câu hỏi bí mật"}
-        </button>
+        <div className="lost-card-actions">
+          <button
+            className="match-card-action"
+            type="button"
+            onClick={() => onOpenSecretQuestion(item)}
+          >
+            {isOwner
+              ? "Tạo câu hỏi bí mật"
+              : "Xem câu hỏi bí mật"}
+          </button>
+
+          {isOwner && (
+            <button
+              className="lost-card-action"
+              type="button"
+              onClick={() => onOpenClaims(item)}
+            >
+              Yêu cầu nhận đồ
+            </button>
+          )}
+        </div>
       )}
     </article>
   );
