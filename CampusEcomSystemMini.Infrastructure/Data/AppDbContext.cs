@@ -25,6 +25,8 @@ public class AppDbContext : DbContext
 
     public DbSet<Claim> Claims {get;set;}
 
+    public DbSet<ConnectionRequest> ConnectionRequests {get;set;}
+
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
     {
@@ -123,6 +125,28 @@ entity.HasOne<Post>()
             entity.HasOne<User>()
                 .WithMany()
                 .HasForeignKey(x => x.ClaimantUserId)
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<ConnectionRequest>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            entity.HasIndex(x => x.SenderId);
+
+            entity.HasIndex(x => x.ReceiverId);
+
+            // SQL Server không cho phép nhiều đường cascade
+            // (Users -> ConnectionRequests theo cả hai chiều),
+            // nên yêu cầu kết nối không cascade trực tiếp từ User.
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(x => x.SenderId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(x => x.ReceiverId)
                 .OnDelete(DeleteBehavior.NoAction);
         });
     }

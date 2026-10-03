@@ -14,6 +14,7 @@ import Preferences from "./components/Preferences";
 import PostsPage from "./components/PostsPage";
 import SmartMatching from "./components/SmartMatching";
 import LostFoundPage from "./components/LostFoundPage";
+import ConnectionRequests from "./components/ConnectionRequests";
 
 import {
   getMe,
@@ -68,11 +69,19 @@ import {
   markReturned,
 } from "./services/lostFoundService";
 
+import {
+  sendConnectionRequest,
+  getConnectionRequests,
+  acceptConnectionRequest,
+  rejectConnectionRequest,
+} from "./services/connectionService";
+
 import "./styles/auth.css";
 import "./styles/preferences.css";
 import "./styles/posts.css";
 import "./styles/matching.css";
 import "./styles/lostFound.css";
+import "./styles/messenger.css";
 
 export default function App() {
 
@@ -230,6 +239,31 @@ export default function App() {
   // Yêu cầu đang được duyệt / từ chối, hoặc "returned"
   // khi chủ bài đăng xác nhận đã trả đồ.
   const [claimsActionId, setClaimsActionId] = useState(null);
+
+  // =====================================================
+  // CONNECTION REQUESTS (MODULE 5 / BATCH 1)
+  // =====================================================
+
+  // Tab: "received" (nhận được) | "sent" (đã gửi)
+  const [connectionMode, setConnectionMode] = useState("received");
+
+  const [connectionRequests, setConnectionRequests] = useState([]);
+
+  const [connectionLoading, setConnectionLoading] = useState(false);
+
+  const [connectionError, setConnectionError] = useState("");
+
+  const [connectionSuccess, setConnectionSuccess] = useState("");
+
+  // Yêu cầu đang được chấp nhận / từ chối
+  const [connectionActionId, setConnectionActionId] = useState(null);
+
+  // Form gửi yêu cầu kết nối
+  const [receiverId, setReceiverId] = useState("");
+
+  const [sending, setSending] = useState(false);
+
+  const [sendError, setSendError] = useState("");
 
 
   // =====================================================
@@ -2113,6 +2147,203 @@ export default function App() {
 
 
   // =====================================================
+  // CONNECTION REQUESTS (MODULE 5 / BATCH 1)
+  // =====================================================
+
+  // Backend là nguồn sự thật: sau mỗi thao tác,
+  // danh sách yêu cầu được tải lại từ API.
+  async function fetchConnectionRequests() {
+    setConnectionLoading(true);
+
+    setConnectionError("");
+
+    try {
+      // GET /api/connections/requests
+      const data = await getConnectionRequests();
+
+      setConnectionRequests(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error(
+        "Fetch connection requests failed:",
+        error
+      );
+
+      setConnectionRequests([]);
+
+      setConnectionError(
+        error.message ||
+          "Không thể tải yêu cầu kết nối."
+      );
+    } finally {
+      setConnectionLoading(false);
+    }
+  }
+
+  function showConnections() {
+    setPage("connections");
+
+    setError("");
+
+    setSuccess("");
+
+    setConnectionMode("received");
+
+    setConnectionSuccess("");
+
+    setConnectionError("");
+
+    setSendError("");
+
+    setReceiverId("");
+
+    fetchConnectionRequests();
+  }
+
+  function handleConnectionModeChange(mode) {
+    setConnectionMode(mode);
+
+    setConnectionSuccess("");
+
+    setConnectionError("");
+  }
+
+  function getConnectionErrorMessage(error) {
+    if (error.status === 400) {
+      return "Không thể gửi yêu cầu kết nối cho chính mình.";
+    }
+
+    if (error.status === 404) {
+      return "Người nhận không tồn tại.";
+    }
+
+    if (error.status === 409) {
+      return "Đã có yêu cầu kết nối đang chờ với người này.";
+    }
+
+    return error.message || "Không thể gửi yêu cầu kết nối.";
+  }
+
+  async function handleSendConnectionRequest(targetReceiverId) {
+    const trimmed = String(targetReceiverId ?? "").trim();
+
+    if (!trimmed) {
+      return;
+    }
+
+    setSending(true);
+
+    setSendError("");
+
+    setConnectionSuccess("");
+
+    try {
+      // POST /api/connections/requests
+      const data = await sendConnectionRequest(trimmed);
+
+      setReceiverId("");
+
+      setConnectionSuccess(
+        `Đã gửi yêu cầu kết nối đến ${data?.receiverName ?? "người nhận"}.`
+      );
+
+      await fetchConnectionRequests();
+    } catch (error) {
+      console.error(
+        "Send connection request failed:",
+        error
+      );
+
+      setSendError(getConnectionErrorMessage(error));
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function handleAcceptConnectionRequest(request) {
+    const connectionRequestId = request?.connectionRequestId;
+
+    setConnectionActionId(connectionRequestId);
+
+    setConnectionError("");
+
+    setConnectionSuccess("");
+
+    try {
+      // PUT /api/connections/requests/{id}/accept
+      await acceptConnectionRequest(
+        connectionRequestId
+      );
+
+      setConnectionSuccess(
+        `Đã đồng ý kết nối với ${request?.senderName ?? "người gửi"}.`
+      );
+
+      await fetchConnectionRequests();
+    } catch (error) {
+      console.error(
+        "Accept connection request failed:",
+        error
+      );
+
+      setConnectionError(
+        getConnectionActionErrorMessage(error)
+      );
+    } finally {
+      setConnectionActionId(null);
+    }
+  }
+
+  async function handleRejectConnectionRequest(request) {
+    const connectionRequestId = request?.connectionRequestId;
+
+    setConnectionActionId(connectionRequestId);
+
+    setConnectionError("");
+
+    setConnectionSuccess("");
+
+    try {
+      // PUT /api/connections/requests/{id}/reject
+      await rejectConnectionRequest(
+        connectionRequestId
+      );
+
+      setConnectionSuccess(
+        `Đã từ chối yêu cầu kết nối từ ${request?.senderName ?? "người gửi"}.`
+      );
+
+      await fetchConnectionRequests();
+    } catch (error) {
+      console.error(
+        "Reject connection request failed:",
+        error
+      );
+
+      setConnectionError(
+        getConnectionActionErrorMessage(error)
+      );
+    } finally {
+      setConnectionActionId(null);
+    }
+  }
+
+  function getConnectionActionErrorMessage(error) {
+    if (error.status === 403) {
+      return "Chỉ người nhận yêu cầu mới được thực hiện thao tác này.";
+    }
+
+    if (error.status === 404) {
+      return "Yêu cầu kết nối không tồn tại.";
+    }
+
+    if (error.status === 409) {
+      return "Yêu cầu này không còn ở trạng thái chờ.";
+    }
+
+    return error.message || "Không thể xử lý yêu cầu kết nối.";
+  }
+
+  // =====================================================
   // RENDER
   // =====================================================
 
@@ -2341,13 +2572,14 @@ export default function App() {
        {page === "home" && user && (
 
          <HomePage
-           user={user}
-           onLogout={handleLogout}
-           onViewProfile={showProfile}
-           onSetupPreferences={showPreferences}
-onViewMyPosts={showMyPosts}
+            user={user}
+            onLogout={handleLogout}
+            onViewProfile={showProfile}
+            onSetupPreferences={showPreferences}
+            onViewMyPosts={showMyPosts}
             onOpenMatching={showSmartMatching}
             onOpenLostFound={showLostFound}
+            onOpenConnections={showConnections}
           />
 
        )}
@@ -2520,9 +2752,77 @@ claimsItem={claimsItem}
        )}
 
 
-       {/* ================================================
-           TRANG BÀI ĐĂNG
-       ================================================= */}
+        {/* ================================================
+            TRANG KẾT NỐI (MODULE 5 / BATCH 1)
+        ================================================= */}
+
+        {page === "connections" && user && (
+
+          <main className="auth-page">
+
+            <div className="auth-background-shape shape-one" />
+
+            <div className="auth-background-shape shape-two" />
+
+
+            <header className="site-header">
+
+              <div className="brand">
+
+                <span className="brand-icon">
+                  C
+                </span>
+
+                <span>
+                  Campus
+                  <span className="brand-highlight">
+                    Ecom
+                  </span>
+                </span>
+              </div>
+
+              <span className="header-label">
+                STUDENT COMMUNITY
+              </span>
+            </header>
+
+
+            <section className="pref-main">
+
+              <ConnectionRequests
+                mode={connectionMode}
+                onChangeMode={handleConnectionModeChange}
+                requests={connectionRequests}
+                loading={connectionLoading}
+                error={connectionError}
+                success={connectionSuccess}
+                currentUserId={user?.id ?? user?.Id ?? ""}
+                actionId={connectionActionId}
+                receiverId={receiverId}
+                sending={sending}
+                sendError={sendError}
+                onReceiverIdChange={setReceiverId}
+                onSend={handleSendConnectionRequest}
+                onAccept={handleAcceptConnectionRequest}
+                onReject={handleRejectConnectionRequest}
+                onBack={showProfile}
+              />
+
+            </section>
+
+
+            <footer className="site-footer">
+              CampusEcomSystemMini · Student & Campus Utility
+            </footer>
+
+          </main>
+
+        )}
+
+
+        {/* ================================================
+            TRANG BÀI ĐĂNG
+        ================================================= */}
 
        {page === "posts" && user && (
 

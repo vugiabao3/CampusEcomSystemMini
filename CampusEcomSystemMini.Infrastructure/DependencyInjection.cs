@@ -51,6 +51,10 @@ public static class DependencyInjection
             ClaimRepository>();
 
         services.AddScoped<
+            IConnectionRequestRepository,
+            ConnectionRequestRepository>();
+
+        services.AddScoped<
             IPasswordHasher,
             PasswordHasher>();
 
