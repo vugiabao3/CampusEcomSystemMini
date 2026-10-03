@@ -83,6 +83,8 @@ import {
   createDocument,
   updateDocument,
   deleteDocument,
+  downloadDocument,
+  saveDownloadedFile,
 } from "./services/libraryService";
 
 import "./styles/auth.css";
@@ -295,7 +297,7 @@ export default function App() {
   const [bookMatchesError, setBookMatchesError] = useState("");
 
   // =====================================================
-  // TÀI LIỆU SỐ — MODULE 4 / BATCH 2
+  // TÀI LIỆU SỐ — MODULE 4 / BATCH 2 + BATCH 3
   // =====================================================
 
   // "all" | "free" | "paid" = GET /api/library/documents
@@ -330,6 +332,15 @@ export default function App() {
   const [documentDetailLoading, setDocumentDetailLoading] = useState(false);
 
   const [documentDetailError, setDocumentDetailError] = useState("");
+
+  // Đang tải tài liệu: lưu id để disable đúng nút tải.
+  const [downloadingDocumentId, setDownloadingDocumentId] =
+    useState("");
+
+  const [documentDownloadError, setDocumentDownloadError] = useState("");
+
+  const [documentDownloadSuccess, setDocumentDownloadSuccess] =
+    useState("");
 
 
   // =====================================================
@@ -2968,6 +2979,92 @@ export default function App() {
 
     setDocumentDetail(null);
 
+    setDocumentDownloadError("");
+
+    setDocumentDownloadSuccess("");
+
+  }
+
+
+  // GET /api/library/documents/{id}/download
+  // Tài liệu miễn phí tải thẳng, tài liệu trả phí Backend
+  // kiểm tra điểm rồi mới trả file đã đóng dấu watermark.
+  async function handleDownloadDocument(document) {
+
+    if (!document?.id) {
+
+      return;
+
+    }
+
+    setDownloadingDocumentId(document.id);
+
+    setDocumentDownloadError("");
+
+    setDocumentDownloadSuccess("");
+
+    try {
+
+      const result = await downloadDocument(document.id);
+
+      saveDownloadedFile(
+        result,
+        document.fileName
+      );
+
+      setDocumentDownloadSuccess(
+        document.pricingType === "Paid"
+          ? `Đã tải tài liệu, đã trừ ${document.price} điểm.`
+          : "Đã tải tài liệu, file được đóng dấu watermark."
+      );
+
+    } catch (error) {
+
+      console.error("Download document failed:", error);
+
+      setDocumentDownloadError(
+        getDocumentDownloadErrorMessage(error)
+      );
+
+    } finally {
+
+      setDownloadingDocumentId("");
+
+    }
+
+  }
+
+
+  function getDocumentDownloadErrorMessage(error) {
+
+    if (error.status === 404) {
+      return "Tài liệu hoặc file tài liệu không còn tồn tại.";
+    }
+
+    // Backend trả về nguyên nhân cụ thể cho tài liệu trả phí.
+    if (error.status === 400) {
+      return (
+        error.message ||
+        "Bạn không đủ điểm để tải tài liệu này."
+      );
+    }
+
+    if (error.status === 409) {
+      return (
+        error.message ||
+        "Hệ thống điểm chưa sẵn sàng, chưa thể tải tài liệu trả phí."
+      );
+    }
+
+    if (error.status === 401) {
+      return "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.";
+    }
+
+    return (
+      error.message ||
+      "Tải tài liệu thất bại, vui lòng thử lại."
+    );
+
   }
 
 
@@ -3483,6 +3580,7 @@ claimsItem={claimsItem}
                   onSubmitDocument: handleSubmitDocument,
                   onOpenDetail: (document) =>
                     handleOpenDocumentDetail(document.id),
+                  onDownload: handleDownloadDocument,
                   onCloseForm: closeDocumentForm,
                   onCloseDetail: closeDocumentDetail,
                   formOpen: documentFormOpen,
@@ -3491,6 +3589,9 @@ claimsItem={claimsItem}
                   detail: documentDetail,
                   detailLoading: documentDetailLoading,
                   detailError: documentDetailError,
+                  downloadingId: downloadingDocumentId,
+                  downloadError: documentDownloadError,
+                  downloadSuccess: documentDownloadSuccess,
                 }}
               />
 

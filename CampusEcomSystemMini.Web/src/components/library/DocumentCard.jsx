@@ -2,6 +2,7 @@ import {
   formatBookDate,
   formatFileSize,
   formatPrice,
+  getDownloadLabel,
   getFileTypeClass,
   getFileTypeLabel,
   getPricingClass,
@@ -11,13 +12,16 @@ import {
 
 // Một tài liệu trong danh sách.
 // Toàn bộ dữ liệu do Backend trả về, frontend chỉ hiển thị.
-// Download tài liệu thuộc batch Download nên batch này chưa có nút tải.
+// Nút tải gọi GET /api/library/documents/{id}/download,
+// file trả về đã có watermark của người tải.
 export default function DocumentCard({
   document,
   isOwner,
+  downloading,
   onOpenDetail,
   onEdit,
   onDelete,
+  onDownload,
 }) {
   const title = document?.title ?? "";
 
@@ -98,6 +102,15 @@ export default function DocumentCard({
           onClick={() => onOpenDetail(document)}
         >
           Xem chi tiết
+        </button>
+
+        <button
+          className="book-action book-action--download"
+          type="button"
+          disabled={downloading}
+          onClick={() => onDownload(document)}
+        >
+          {downloading ? "Đang tải..." : getDownloadLabel(document)}
         </button>
 
         {isOwner && (

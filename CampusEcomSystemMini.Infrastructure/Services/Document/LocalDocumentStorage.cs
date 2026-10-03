@@ -58,15 +58,12 @@ public class LocalDocumentStorage : IDocumentStorage
     {
         // StoredFileName do Backend sinh ra,
         // vẫn chặn đường dẫn để không xóa nhầm file ngoài thư mục lưu trữ.
-        if (string.IsNullOrWhiteSpace(storedFileName) ||
-            storedFileName.Contains(Path.DirectorySeparatorChar) ||
-            storedFileName.Contains(Path.AltDirectorySeparatorChar) ||
-            storedFileName.Contains(".."))
+        var filePath = ResolveFilePath(storedFileName);
+
+        if (filePath is null)
         {
             return;
         }
-
-        var filePath = Path.Combine(_rootPath, storedFileName);
 
         // File không tồn tại vẫn coi như đã xóa.
         if (!File.Exists(filePath))
@@ -75,5 +72,41 @@ public class LocalDocumentStorage : IDocumentStorage
         }
 
         File.Delete(filePath);
+    }
+
+    public async Task<byte[]?> GetContentAsync(
+        string storedFileName,
+        CancellationToken cancellationToken)
+    {
+        var filePath = ResolveFilePath(storedFileName);
+
+        if (filePath is null)
+        {
+            return null;
+        }
+
+        if (!File.Exists(filePath))
+        {
+            return null;
+        }
+
+        return await File.ReadAllBytesAsync(
+            filePath,
+            cancellationToken);
+    }
+
+    // Trả về null nếu StoredFileName không hợp lệ,
+    // tránh đọc hoặc xóa nhầm file ngoài thư mục lưu trữ.
+    private string? ResolveFilePath(string storedFileName)
+    {
+        if (string.IsNullOrWhiteSpace(storedFileName) ||
+            storedFileName.Contains(Path.DirectorySeparatorChar) ||
+            storedFileName.Contains(Path.AltDirectorySeparatorChar) ||
+            storedFileName.Contains(".."))
+        {
+            return null;
+        }
+
+        return Path.Combine(_rootPath, storedFileName);
     }
 }

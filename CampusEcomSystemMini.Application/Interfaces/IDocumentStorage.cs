@@ -12,6 +12,13 @@ public interface IDocumentStorage
         DocumentUpload upload,
         CancellationToken cancellationToken);
 
+    // Đọc nội dung file theo StoredFileName để đóng dấu watermark
+    // rồi mới trả về người tải.
+    // Trả về null nếu file không còn tồn tại trên storage.
+    Task<byte[]?> GetContentAsync(
+        string storedFileName,
+        CancellationToken cancellationToken);
+
     // Xoá file theo StoredFileName.
     // File không tồn tại vẫn coi như đã xoá.
     void Delete(string storedFileName);

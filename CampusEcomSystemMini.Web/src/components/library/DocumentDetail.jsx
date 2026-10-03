@@ -2,6 +2,8 @@ import {
   formatBookDate,
   formatFileSize,
   formatPrice,
+  getDownloadHint,
+  getDownloadLabel,
   getFileTypeClass,
   getFileTypeLabel,
   getPricingClass,
@@ -12,16 +14,20 @@ import {
 // Chi tiết một tài liệu số,
 // dữ liệu lấy từ GET /api/library/documents/{id}.
 //
-// File gốc không được trả trực tiếp ở batch này:
-// tải tài liệu đi qua endpoint download của batch Download,
-// nên phần tải file chưa có trong UI.
+// Nút tải gọi GET /api/library/documents/{id}/download.
+// File tải về đã được Backend đóng dấu watermark,
+// nên frontend không xử lý watermark.
 export default function DocumentDetail({
   document,
   loading,
   error,
   isOwner,
+  downloading,
+  downloadError,
+  downloadSuccess,
   onEdit,
   onDelete,
+  onDownload,
   onClose,
 }) {
   return (
@@ -160,6 +166,45 @@ export default function DocumentDetail({
                   {formatBookDate(document.updatedAt)}
                 </p>
               )}
+
+            <div className="doc-download">
+              <div className="doc-download-main">
+                <span className="doc-card-meta-label">
+                  {isOwner ? "Giá (tài liệu của bạn)" : "Giá tải về"}
+                </span>
+
+                <span className="doc-download-price">
+                  {formatPrice(document.price)}
+                </span>
+              </div>
+
+              <p className="doc-download-hint">
+                {getDownloadHint(document, isOwner)}
+              </p>
+
+              <button
+                className="btn btn-primary doc-download-btn"
+                type="button"
+                disabled={downloading}
+                onClick={() => onDownload(document)}
+              >
+                {downloading
+                  ? "Đang tải..."
+                  : getDownloadLabel(document)}
+              </button>
+
+              {downloadError && (
+                <div className="message message-error" role="alert">
+                  {downloadError}
+                </div>
+              )}
+
+              {downloadSuccess && (
+                <div className="message message-success" role="status">
+                  {downloadSuccess}
+                </div>
+              )}
+            </div>
 
             <div className="posts-actions">
               {isOwner && (

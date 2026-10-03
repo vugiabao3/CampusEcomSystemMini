@@ -603,6 +603,68 @@
   font-weight: 600;
 }
 
+
+/* =====================================================
+   TẢI TÀI LIỆU + WATERMARK — MODULE 4 / BATCH 3
+   ===================================================== */
+
+/* Nút tải trên card tài liệu */
+.book-action--download {
+  border-color: transparent;
+  color: #027a48;
+  background: #d3f8df;
+}
+
+.book-action--download:hover {
+  background: #bbf0cd;
+}
+
+.book-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Khối tải trong modal chi tiết */
+.doc-download {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding: 16px 18px;
+  border: 1px solid #e1eaf7;
+  border-radius: 14px;
+  background: #f7faff;
+}
+
+.doc-download-main {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.doc-download-price {
+  color: #17243a;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.doc-download-hint {
+  margin: 0;
+  color: #687995;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.doc-download-btn {
+  align-self: flex-start;
+}
+
+.doc-download-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 .modal-form .form-group input[type="file"] {
   width: 100%;
   padding: 11px 14px;

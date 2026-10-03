@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using CampusEcomSystemMini.Infrastructure.Services;
 using CampusEcomSystemMini.Infrastructure.Services.Document;
+using CampusEcomSystemMini.Infrastructure.Services.Document.Points;
  
 namespace CampusEcomSystemMini.Infrastructure;
 
@@ -68,6 +69,17 @@ public static class DependencyInjection
         services.AddScoped<
             IDocumentFileValidator,
             DocumentFileValidator>();
+
+        // Download + Watermark (Module 4 / BATCH 3)
+        services.AddScoped<
+            IDocumentWatermarkService,
+            DocumentWatermarkService>();
+
+        // Hệ thống điểm thuộc Module 6,
+        // Module 4 chỉ dùng abstraction này cho tài liệu trả phí.
+        services.AddScoped<
+            IPointService,
+            UnavailablePointService>();
 
         services.AddScoped<
             IPasswordHasher,

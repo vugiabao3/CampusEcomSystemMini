@@ -1,7 +1,8 @@
 // libraryService.js — gọi API Thư viện học thuật (MODULE 4)
 // Batch 1: sàn đổi sách.
 // Batch 2: tài liệu số.
-import { request } from "./authService.js";
+// Batch 3: tải tài liệu + watermark.
+import { request, requestBlob } from "./authService.js";
 
 // Giới hạn file tài liệu theo workflow Upload tài liệu.
 // Backend cũng kiểm tra lại, giá trị này chỉ để báo lỗi sớm ở UI.
@@ -240,4 +241,43 @@ export async function deleteDocument(id) {
   return request(`/api/library/documents/${id}`, {
     method: "DELETE",
   });
+}
+
+
+// =====================================================
+// TẢI TÀI LIỆU — MODULE 4 / BATCH 3
+// =====================================================
+
+// API: GET /api/library/documents/{id}/download
+// Tài liệu miễn phí: trả file đã đóng dấu watermark.
+// Tài liệu trả phí: Backend kiểm tra điểm trước khi trả file.
+//
+// Endpoint này trả file nhị phân nên không dùng request().
+// Trả về { blob, fileName } để lớp trên lưu file xuống máy.
+export async function downloadDocument(id) {
+  return requestBlob(`/api/library/documents/${id}/download`, {
+    method: "GET",
+  });
+}
+
+// Lưu file đã tải xuống máy người dùng.
+// Tên file lấy từ Content-Disposition do Backend trả về.
+export function saveDownloadedFile({ blob, fileName }, fallbackName) {
+  const name = fileName || fallbackName || "document.pdf";
+
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = name;
+
+  document.body.appendChild(link);
+
+  link.click();
+
+  link.remove();
+
+  // Nhả object URL sau khi trình duyệt bắt đầu tải file.
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

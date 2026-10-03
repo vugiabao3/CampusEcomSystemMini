@@ -24,25 +24,7 @@ function clearToken() {
 
 // Hàm dùng chung để gọi Backend
 export async function request(path, options = {}) {
-  const token = getToken();
-
-  const headers = {
-    // FormData phải để trình duyệt tự gắn Content-Type
-    // kèm boundary, nếu gán application/json sẽ không parse được.
-    ...(options.body && !(options.body instanceof FormData)
-      ? { "Content-Type": "application/json" }
-      : {}),
-    ...(options.headers || {}),
-  };
-
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    headers,
-  });
+  const response = await send(path, options);
 
   // Đọc nội dung phản hồi; một số API có thể trả về body rỗng
   const text = await response.text();
@@ -58,23 +40,103 @@ export async function request(path, options = {}) {
   }
 
   if (!response.ok) {
-    const message =
-      typeof data === "string"
-        ? data
-        : data?.message ||
-          data?.title ||
-          data?.detail ||
-          `Yêu cầu thất bại (${response.status})`;
-
-    const error = new Error(message);
-
-    // Giữ lại HTTP status để service khác xử lý riêng (ví dụ 404)
-    error.status = response.status;
-
-    throw error;
+    throw buildError(data, response.status);
   }
 
   return data;
+}
+
+// Endpoint tải tài liệu trả về file nhị phân nên không
+// dùng request() (hàm này parse JSON).
+// Thông tin lỗi của endpoint download vẫn là JSON.
+export async function requestBlob(path, options = {}) {
+  const response = await send(path, options);
+
+  if (!response.ok) {
+    const text = await response.text();
+
+    let data = null;
+
+    if (text) {
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = text;
+      }
+    }
+
+    throw buildError(data, response.status);
+  }
+
+  const blob = await response.blob();
+
+  const fileName = readFileName(response.headers.get("content-disposition"));
+
+  return { blob, fileName };
+}
+
+// Gửi request kèm JWT, dùng chung cho request và requestBlob.
+async function send(path, options = {}) {
+  const token = getToken();
+
+  const headers = {
+    // FormData phải để trình duyệt tự gắn Content-Type
+    // kèm boundary, nếu gán application/json sẽ không parse được.
+    ...(options.body && !(options.body instanceof FormData)
+      ? { "Content-Type": "application/json" }
+      : {}),
+    ...(options.headers || {}),
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  return fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    headers,
+  });
+}
+
+function buildError(data, status) {
+  const message =
+    typeof data === "string"
+      ? data
+      : data?.message ||
+        data?.title ||
+        data?.detail ||
+        `Yêu cầu thất bại (${status})`;
+
+  const error = new Error(message);
+
+  // Giữ lại HTTP status để service khác xử lý riêng (ví dụ 404)
+  error.status = status;
+
+  return error;
+}
+
+// Content-Disposition của file tải về có dạng
+// attachment; filename="tai-lieu.pdf".
+function readFileName(contentDisposition) {
+  if (!contentDisposition) {
+    return "";
+  }
+
+  const utf8Match = contentDisposition.match(
+    /filename\*=UTF-8''([^;]+)/i
+  );
+
+  if (utf8Match) {
+    try {
+      return decodeURIComponent(utf8Match[1].trim());
+    } catch {
+      return utf8Match[1].trim();
+    }
+  }
+
+  const match = contentDisposition.match(/filename="?([^";]+)"?/i);
+
+  return match ? match[1].trim() : "";
 }
 
 // API 1: POST /api/auth/register
