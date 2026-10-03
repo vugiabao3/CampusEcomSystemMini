@@ -14,6 +14,16 @@ public class ClaimRepository : IClaimRepository
         _context = context;
     }
 
+    public async Task<Claim?> GetByIdAsync(
+        Guid claimId,
+        CancellationToken cancellationToken)
+    {
+        return await _context.Claims
+            .FirstOrDefaultAsync(
+                x => x.Id == claimId,
+                cancellationToken);
+    }
+
     public async Task<List<Claim>> GetByPostIdAsync(
         Guid postId,
         CancellationToken cancellationToken)
@@ -32,6 +42,13 @@ public class ClaimRepository : IClaimRepository
         CancellationToken cancellationToken)
     {
         await _context.Claims.AddAsync(claim, cancellationToken);
+    }
+
+    public void UpdateAsync(
+        Claim claim,
+        CancellationToken cancellationToken)
+    {
+        _context.Claims.Update(claim);
     }
 
     public async Task SaveChangesAsync(

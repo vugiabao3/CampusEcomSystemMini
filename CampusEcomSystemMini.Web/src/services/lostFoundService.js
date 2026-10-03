@@ -85,3 +85,29 @@ export async function getClaims(postId) {
     method: "GET",
   });
 }
+
+// API: PUT /api/lost-found/claims/{claimId}/approve
+// Chủ bài đăng Found duyệt yêu cầu nhận đồ hợp lệ.
+// Backend tự kiểm tra chủ bài đăng và trạng thái yêu cầu.
+export async function approveClaim(claimId) {
+  return request(`/api/lost-found/claims/${claimId}/approve`, {
+    method: "PUT",
+  });
+}
+
+// API: PUT /api/lost-found/claims/{claimId}/reject
+// Chủ bài đăng Found từ chối yêu cầu nhận đồ không hợp lệ.
+export async function rejectClaim(claimId) {
+  return request(`/api/lost-found/claims/${claimId}/reject`, {
+    method: "PUT",
+  });
+}
+
+// API: PUT /api/lost-found/{postId}/returned
+// Chủ bài đăng Found xác nhận đã trao trả đồ.
+// Backend chỉ cho phép khi đã có yêu cầu nhận đồ được duyệt.
+export async function markReturned(postId) {
+  return request(`/api/lost-found/${postId}/returned`, {
+    method: "PUT",
+  });
+}

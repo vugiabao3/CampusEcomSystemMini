@@ -1,7 +1,10 @@
+using CampusEcomSystemMini.Application.LostFound.Claims.ApproveClaim;
 using CampusEcomSystemMini.Application.LostFound.Claims.CreateClaim;
 using CampusEcomSystemMini.Application.LostFound.Claims.GetClaims;
+using CampusEcomSystemMini.Application.LostFound.Claims.RejectClaim;
 using CampusEcomSystemMini.Application.LostFound.GetLostFound;
 using CampusEcomSystemMini.Application.LostFound.GetMap;
+using CampusEcomSystemMini.Application.LostFound.Returned;
 using CampusEcomSystemMini.Application.LostFound.SecretQuestions.CreateSecretQuestion;
 using CampusEcomSystemMini.Application.LostFound.SecretQuestions.GetSecretQuestion;
 using MediatR;
@@ -174,6 +177,124 @@ public class LostFoundController : ControllerBase
 
             default:
                 return Ok(result.Claims);
+        }
+    }
+
+    // PUT /api/lost-found/claims/{claimId}/approve
+    [HttpPut("claims/{claimId:guid}/approve")]
+    public async Task<ActionResult<ApproveClaimResponse>> ApproveClaim(
+        Guid claimId,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(
+            new ApproveClaimCommand(claimId),
+            cancellationToken);
+
+        switch (result.Outcome)
+        {
+            // Yêu cầu nhận đồ không tồn tại.
+            case ApproveClaimOutcome.ClaimNotFound:
+                return NotFound();
+
+            // Bài đăng liên kết không tồn tại.
+            case ApproveClaimOutcome.PostNotFound:
+                return NotFound();
+
+            // Chỉ bài đăng Found mới có yêu cầu nhận đồ.
+            case ApproveClaimOutcome.NotFoundPostType:
+                return Conflict(
+                    "Claims are only available for Found posts.");
+
+            // Không cho người dùng khác duyệt yêu cầu của người khác.
+            case ApproveClaimOutcome.NotOwner:
+                return Forbid();
+
+            // Yêu cầu không còn ở trạng thái chờ.
+            case ApproveClaimOutcome.NotPending:
+                return Conflict(
+                    "Only pending claims can be approved.");
+
+            default:
+                return Ok(result.Response);
+        }
+    }
+
+    // PUT /api/lost-found/claims/{claimId}/reject
+    [HttpPut("claims/{claimId:guid}/reject")]
+    public async Task<ActionResult<RejectClaimResponse>> RejectClaim(
+        Guid claimId,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(
+            new RejectClaimCommand(claimId),
+            cancellationToken);
+
+        switch (result.Outcome)
+        {
+            // Yêu cầu nhận đồ không tồn tại.
+            case RejectClaimOutcome.ClaimNotFound:
+                return NotFound();
+
+            // Bài đăng liên kết không tồn tại.
+            case RejectClaimOutcome.PostNotFound:
+                return NotFound();
+
+            // Chỉ bài đăng Found mới có yêu cầu nhận đồ.
+            case RejectClaimOutcome.NotFoundPostType:
+                return Conflict(
+                    "Claims are only available for Found posts.");
+
+            // Không cho người dùng khác từ chối yêu cầu của người khác.
+            case RejectClaimOutcome.NotOwner:
+                return Forbid();
+
+            // Yêu cầu không còn ở trạng thái chờ.
+            case RejectClaimOutcome.NotPending:
+                return Conflict(
+                    "Only pending claims can be rejected.");
+
+            default:
+                return Ok(result.Response);
+        }
+    }
+
+    // PUT /api/lost-found/{postId}/returned
+    [HttpPut("{postId:guid}/returned")]
+    public async Task<ActionResult<MarkReturnedResponse>> MarkReturned(
+        Guid postId,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(
+            new MarkReturnedCommand(postId),
+            cancellationToken);
+
+        switch (result.Outcome)
+        {
+            // Bài đăng không tồn tại.
+            case MarkReturnedOutcome.PostNotFound:
+                return NotFound();
+
+            // Chỉ bài đăng Found mới xác nhận được đã trả đồ.
+            case MarkReturnedOutcome.NotFoundPostType:
+                return Conflict(
+                    "Only Found posts can be marked as returned.");
+
+            // Không cho người dùng khác xác nhận trả đồ thay chủ bài đăng.
+            case MarkReturnedOutcome.NotOwner:
+                return Forbid();
+
+            // Chưa có yêu cầu nhận đồ nào được duyệt.
+            case MarkReturnedOutcome.NoApprovedClaim:
+                return Conflict(
+                    "An approved claim is required before marking as returned.");
+
+            // Đồ đã được trao trả từ trước đó.
+            case MarkReturnedOutcome.AlreadyReturned:
+                return Conflict(
+                    "This item has already been marked as returned.");
+
+            default:
+                return Ok(result.Response);
         }
     }
 }

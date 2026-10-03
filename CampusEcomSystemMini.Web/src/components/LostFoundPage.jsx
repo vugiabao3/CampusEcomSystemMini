@@ -1,3 +1,7 @@
+import {
+  getStatusClass,
+  getStatusLabel,
+} from "./lostFoundStatus.js";
 import LostFoundFilter from "./LostFoundFilter.jsx";
 import LostFoundList from "./LostFoundList.jsx";
 import LostFoundMap from "./LostFoundMap.jsx";
@@ -43,11 +47,28 @@ export default function LostFoundPage({
   claims,
   claimsLoading,
   claimsError,
+  claimsActionId,
   onOpenClaims,
   onCloseClaims,
+  onApproveClaim,
+  onRejectClaim,
+  onMarkReturned,
   onBack,
 }) {
   const currentUserId = user?.id ?? user?.Id ?? "";
+
+  // Chủ bài đăng Found mới được duyệt / từ chối / xác nhận đã trả đồ.
+  const isClaimsOwner =
+    Boolean(currentUserId) &&
+    String(claimsItem?.userId ?? "").toLowerCase() ===
+      String(currentUserId).toLowerCase();
+
+  // Chỉ được xác nhận đã trả đồ khi đã có yêu cầu nhận đồ được duyệt,
+  // đúng với quy tắc Backend kiểm tra.
+  const hasApprovedClaim =
+    (claims ?? []).some((claim) => claim?.status === "Approved");
+
+  const isReturned = claimsItem?.status === "Returned";
 
   return (
     <section className="pref-card posts-card lost-page">
@@ -172,6 +193,12 @@ export default function LostFoundPage({
               <h2>Danh sách yêu cầu</h2>
 
               <p>{claimsItem.title}</p>
+
+              {isReturned && (
+                <span className={getStatusClass(claimsItem?.status)}>
+                  {getStatusLabel(claimsItem?.status)}
+                </span>
+              )}
             </div>
 
             <ClaimList
@@ -179,6 +206,9 @@ export default function LostFoundPage({
               loading={claimsLoading}
               error={claimsError}
               currentUserId={currentUserId}
+              actionId={claimsActionId}
+              onApprove={onApproveClaim}
+              onReject={onRejectClaim}
             />
 
             <div className="posts-actions">
@@ -189,6 +219,19 @@ export default function LostFoundPage({
               >
                 Đóng
               </button>
+
+              {isClaimsOwner &&
+                hasApprovedClaim &&
+                !isReturned && (
+                  <button
+                    className="btn btn-primary"
+                    type="button"
+                    disabled={claimsActionId === "returned"}
+                    onClick={() => onMarkReturned(claimsItem)}
+                  >
+                    Xác nhận đã trả đồ
+                  </button>
+                )}
             </div>
           </div>
         </div>

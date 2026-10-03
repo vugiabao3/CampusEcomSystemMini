@@ -175,6 +175,51 @@
   min-width: 0;
 }
 
+.claim-item-side {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.claim-item-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.claim-action {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.claim-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.claim-action--approve {
+  color: #027a48;
+  background: #d3f8df;
+}
+
+.claim-action--approve:not(:disabled):hover {
+  background: #b7efcb;
+}
+
+.claim-action--reject {
+  color: #b42318;
+  background: #fee4e2;
+}
+
+.claim-action--reject:not(:disabled):hover {
+  background: #fbd3d0;
+}
+
 .claim-item-name {
   color: #17243a;
   font-size: 13px;

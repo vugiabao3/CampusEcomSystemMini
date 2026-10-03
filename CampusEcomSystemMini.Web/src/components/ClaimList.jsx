@@ -47,12 +47,16 @@ function getClaimStatusClass(status) {
 }
 
 // Danh sách yêu cầu nhận đồ của chủ bài đăng Found.
-// Batch này chưa có duyệt / từ chối nên chỉ hiển thị trạng thái.
+// Yêu cầu đang chờ có nút Duyệt / Từ chối,
+// trạng thái sau khi xử lý do Backend trả về.
 export default function ClaimList({
   claims,
   loading,
   error,
   currentUserId,
+  actionId,
+  onApprove,
+  onReject,
 }) {
   if (loading) {
     return (
@@ -87,6 +91,11 @@ export default function ClaimList({
           String(claim?.claimantUserId ?? "").toLowerCase() ===
             String(currentUserId).toLowerCase();
 
+        // Chỉ yêu cầu đang chờ mới được duyệt hoặc từ chối.
+        const isPending = claim?.status === "Pending";
+
+        const isBusy = actionId === claim?.claimId;
+
         return (
           <li className="claim-item" key={claim?.claimId}>
             <div className="claim-item-main">
@@ -102,9 +111,33 @@ export default function ClaimList({
               </span>
             </div>
 
-            <span className={getClaimStatusClass(claim?.status)}>
-              {getClaimStatusLabel(claim?.status)}
-            </span>
+            <div className="claim-item-side">
+              <span className={getClaimStatusClass(claim?.status)}>
+                {getClaimStatusLabel(claim?.status)}
+              </span>
+
+              {isPending && (
+                <div className="claim-item-actions">
+                  <button
+                    className="claim-action claim-action--approve"
+                    type="button"
+                    disabled={isBusy}
+                    onClick={() => onApprove(claim)}
+                  >
+                    Duyệt
+                  </button>
+
+                  <button
+                    className="claim-action claim-action--reject"
+                    type="button"
+                    disabled={isBusy}
+                    onClick={() => onReject(claim)}
+                  >
+                    Từ chối
+                  </button>
+                </div>
+              )}
+            </div>
           </li>
         );
       })}

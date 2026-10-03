@@ -63,6 +63,9 @@ import {
   getSecretQuestion,
   createClaim,
   getClaims,
+  approveClaim,
+  rejectClaim,
+  markReturned,
 } from "./services/lostFoundService";
 
 import "./styles/auth.css";
@@ -223,6 +226,10 @@ export default function App() {
   const [claimsLoading, setClaimsLoading] = useState(false);
 
   const [claimsError, setClaimsError] = useState("");
+
+  // Yêu cầu đang được duyệt / từ chối, hoặc "returned"
+  // khi chủ bài đăng xác nhận đã trả đồ.
+  const [claimsActionId, setClaimsActionId] = useState(null);
 
 
   // =====================================================
@@ -1912,6 +1919,199 @@ export default function App() {
   }
 
 
+  // Backend là nguồn sự thật: sau khi duyệt / từ chối,
+  // danh sách yêu cầu được tải lại từ API.
+  async function reloadClaims(postId) {
+
+    try {
+
+      const data = await getClaims(postId);
+
+      setClaims(data);
+
+      setClaimsError("");
+
+    } catch (error) {
+
+      console.error(
+
+        "Reload claims failed:",
+
+        error
+
+      );
+
+      setClaimsError(getClaimsErrorMessage(error));
+
+    }
+
+  }
+
+
+  // =====================================================
+  // DUYỆT / TỪ CHỐI / ĐÃ TRẢ ĐỒ (MODULE 3 / BATCH 4)
+  // =====================================================
+
+  function getClaimActionErrorMessage(error, fallback) {
+    if (error.status === 403) {
+      return "Bạn không phải chủ bài đăng này.";
+    }
+
+    if (error.status === 409) {
+      return error.message ||
+        "Yêu cầu này không còn ở trạng thái chờ.";
+    }
+
+    return error.message || fallback;
+  }
+
+
+  async function handleApproveClaim(claim) {
+
+    setClaimsActionId(claim?.claimId);
+
+    setClaimsError("");
+
+    setLostFoundSuccess("");
+
+    try {
+
+      // PUT /api/lost-found/claims/{claimId}/approve
+      const data = await approveClaim(claim?.claimId);
+
+      await reloadClaims(claim?.postId);
+
+      setLostFoundSuccess(
+        `Đã duyệt yêu cầu (${data?.status ?? "Approved"}).`
+      );
+
+    } catch (error) {
+
+      console.error(
+
+        "Approve claim failed:",
+
+        error
+
+      );
+
+      setClaimsError(
+        getClaimActionErrorMessage(
+          error,
+          "Không thể duyệt yêu cầu nhận đồ."
+        )
+      );
+
+    } finally {
+
+      setClaimsActionId(null);
+
+    }
+
+  }
+
+
+  async function handleRejectClaim(claim) {
+
+    setClaimsActionId(claim?.claimId);
+
+    setClaimsError("");
+
+    setLostFoundSuccess("");
+
+    try {
+
+      // PUT /api/lost-found/claims/{claimId}/reject
+      const data = await rejectClaim(claim?.claimId);
+
+      await reloadClaims(claim?.postId);
+
+      setLostFoundSuccess(
+        `Đã từ chối yêu cầu (${data?.status ?? "Rejected"}).`
+      );
+
+    } catch (error) {
+
+      console.error(
+
+        "Reject claim failed:",
+
+        error
+
+      );
+
+      setClaimsError(
+        getClaimActionErrorMessage(
+          error,
+          "Không thể từ chối yêu cầu nhận đồ."
+        )
+      );
+
+    } finally {
+
+      setClaimsActionId(null);
+
+    }
+
+  }
+
+
+  async function handleMarkReturned(item) {
+
+    const confirmed = window.confirm(
+      "Xác nhận đã trao trả đồ? Bài đăng sẽ chuyển sang trạng thái Đã Trao Trả."
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setClaimsActionId("returned");
+
+    setClaimsError("");
+
+    setLostFoundSuccess("");
+
+    try {
+
+      // PUT /api/lost-found/{postId}/returned
+      await markReturned(item?.postId);
+
+      // Tải lại danh sách, tin và bản đồ từ Backend.
+      await reloadClaims(item?.postId);
+
+      await fetchLostFound(lostFoundFilter);
+
+      await fetchLostFoundMap();
+
+      setLostFoundSuccess("Đã xác nhận trao trả đồ.");
+
+    } catch (error) {
+
+      console.error(
+
+        "Mark returned failed:",
+
+        error
+
+      );
+
+      setClaimsError(
+        getClaimActionErrorMessage(
+          error,
+          "Không thể xác nhận đã trả đồ."
+        )
+      );
+
+    } finally {
+
+      setClaimsActionId(null);
+
+    }
+
+  }
+
+
   // =====================================================
   // RENDER
   // =====================================================
@@ -2295,13 +2495,17 @@ onEditPreferences={showPreferences}
                success={lostFoundSuccess}
                onSubmitClaim={handleSubmitClaim}
                onCloseClaim={closeClaim}
-               claimsItem={claimsItem}
-               claims={claims}
-               claimsLoading={claimsLoading}
-               claimsError={claimsError}
-               onOpenClaims={handleOpenClaims}
-               onCloseClaims={closeClaims}
-               onBack={showProfile}
+claimsItem={claimsItem}
+                claims={claims}
+                claimsLoading={claimsLoading}
+                claimsError={claimsError}
+                claimsActionId={claimsActionId}
+                onOpenClaims={handleOpenClaims}
+                onCloseClaims={closeClaims}
+                onApproveClaim={handleApproveClaim}
+                onRejectClaim={handleRejectClaim}
+                onMarkReturned={handleMarkReturned}
+                onBack={showProfile}
              />
 
            </section>
