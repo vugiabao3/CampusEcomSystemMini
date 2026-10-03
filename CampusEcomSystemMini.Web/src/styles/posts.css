@@ -35,6 +35,82 @@
   font-size: 12px;
 }
 
+
+/* =====================================================
+   BỘ LỌC BÀI ĐĂNG
+===================================================== */
+
+.posts-filters {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 20px;
+  padding: 18px;
+  border: 1px solid #e7ebf3;
+  border-radius: 15px;
+  background: #fbfcff;
+}
+
+.posts-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.posts-filter-label {
+  flex: 0 0 118px;
+  color: #687995;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+
+.posts-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.posts-chip {
+  padding: 8px 13px;
+  border: 1px solid #dfe6f2;
+  border-radius: 999px;
+  color: #45536a;
+  background: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  transition:
+    color 0.15s,
+    border-color 0.15s,
+    background 0.15s;
+}
+
+.posts-chip:hover {
+  border-color: #b9cbf0;
+  color: #2459d3;
+}
+
+.posts-chip--active {
+  border-color: #2459d3;
+  color: #ffffff;
+  background: #2459d3;
+  box-shadow: 0 6px 14px #2459d32b;
+}
+
+.posts-filter-reset {
+  justify-self: start;
+  padding: 0;
+  border: none;
+  color: #2459d3;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.posts-filter-reset:hover {
+  text-decoration: underline;
+}
+
 .posts-state {
   padding: 34px 0;
   color: #687995;
@@ -389,6 +465,16 @@
 @media (max-width: 850px) {
   .post-list {
     grid-template-columns: 1fr;
+  }
+
+  .posts-filter-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .posts-filter-label {
+    flex: none;
   }
 
   .posts-head-actions {

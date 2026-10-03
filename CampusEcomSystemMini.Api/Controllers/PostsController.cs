@@ -25,12 +25,14 @@ public class PostsController : ControllerBase
         _mediator = mediator;
     }
 
+    // GET /api/posts?type=...&time=...
     [HttpGet]
     public async Task<ActionResult<List<GetPostsResponse>>> GetPosts(
+        [FromQuery] GetPostsQuery query,
         CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(
-            new GetPostsQuery(),
+            query,
             cancellationToken);
 
         return Ok(result);

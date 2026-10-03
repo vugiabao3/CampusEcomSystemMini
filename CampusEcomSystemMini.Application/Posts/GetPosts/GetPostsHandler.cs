@@ -18,8 +18,31 @@ public class GetPostsHandler
         GetPostsQuery request,
         CancellationToken cancellationToken)
     {
+        var type = string.IsNullOrWhiteSpace(request.Type)
+            ? null
+            : request.Type.Trim();
+
+        DateTime? createdFromUtc = null;
+
+        DateTime? createdToUtc = null;
+
+        // CreatedAt lưu theo UTC, "Today" tính theo giờ máy chủ.
+        if (request.Time == PostTimeFilter.Today)
+        {
+            var startOfToday = DateTime.Now.Date;
+
+            createdFromUtc = startOfToday.ToUniversalTime();
+
+            createdToUtc = startOfToday
+                .AddDays(1)
+                .ToUniversalTime();
+        }
+
         var posts =
             await _postRepository.GetAllAsync(
+                type,
+                createdFromUtc,
+                createdToUtc,
                 cancellationToken);
 
         return posts

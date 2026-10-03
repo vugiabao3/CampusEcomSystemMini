@@ -2,9 +2,22 @@
 import { request } from "./authService.js";
 
 // API: GET /api/posts
-// Danh sách toàn bộ bài đăng, mới nhất trước
-export async function getPosts() {
-  return request("/api/posts", {
+// Danh sách bài đăng, mới nhất trước.
+// filters: { type, time } — cả hai đều không bắt buộc.
+export async function getPosts(filters = {}) {
+  const params = new URLSearchParams();
+
+  if (filters.type) {
+    params.append("type", filters.type);
+  }
+
+  if (filters.time) {
+    params.append("time", filters.time);
+  }
+
+  const query = params.toString();
+
+  return request(`/api/posts${query ? `?${query}` : ""}`, {
     method: "GET",
   });
 }

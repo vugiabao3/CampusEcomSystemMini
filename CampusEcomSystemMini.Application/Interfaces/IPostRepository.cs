@@ -5,6 +5,9 @@ namespace CampusEcomSystemMini.Application.Interfaces;
 public interface IPostRepository
 {
     Task<List<Post>> GetAllAsync(
+        string? type,
+        DateTime? createdFromUtc,
+        DateTime? createdToUtc,
         CancellationToken cancellationToken);
 
     Task<List<Post>> GetByUserIdAsync(

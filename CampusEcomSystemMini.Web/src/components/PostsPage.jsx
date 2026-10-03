@@ -1,4 +1,5 @@
 import PostList from "./PostList.jsx";
+import PostFilters from "./PostFilters.jsx";
 import PostFormModal from "./PostFormModal.jsx";
 import PostDetailModal from "./PostDetailModal.jsx";
 
@@ -21,6 +22,8 @@ export default function PostsPage({
   detailError,
   postLikes,
   likingPostId,
+  filters,
+  onFilterChange,
   onCreate,
   onEdit,
   onDelete,
@@ -86,6 +89,13 @@ export default function PostsPage({
         <div className="message message-success" role="status">
           {success}
         </div>
+      )}
+
+      {!isMine && (
+        <PostFilters
+          filters={filters}
+          onChange={onFilterChange}
+        />
       )}
 
       <div className="posts-toolbar">

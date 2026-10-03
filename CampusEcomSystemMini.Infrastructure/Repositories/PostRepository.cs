@@ -15,10 +15,36 @@ public class PostRepository : IPostRepository
     }
 
     public async Task<List<Post>> GetAllAsync(
+        string? type,
+        DateTime? createdFromUtc,
+        DateTime? createdToUtc,
         CancellationToken cancellationToken)
     {
-        return await _context.Posts
-            .AsNoTracking()
+        // Bộ lọc được áp dụng ngay trong truy vấn database.
+        var query = _context.Posts.AsNoTracking();
+
+        if (!string.IsNullOrEmpty(type))
+        {
+            var normalizedType = type.ToLower();
+
+            query = query.Where(
+                x => x.Type != null &&
+                      x.Type.ToLower() == normalizedType);
+        }
+
+        if (createdFromUtc.HasValue)
+        {
+            query = query.Where(
+                x => x.CreatedAt >= createdFromUtc.Value);
+        }
+
+        if (createdToUtc.HasValue)
+        {
+            query = query.Where(
+                x => x.CreatedAt < createdToUtc.Value);
+        }
+
+        return await query
             .OrderByDescending(x => x.CreatedAt)
             .ToListAsync(cancellationToken);
     }

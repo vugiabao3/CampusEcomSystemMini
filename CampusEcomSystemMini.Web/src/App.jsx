@@ -110,6 +110,12 @@ export default function App() {
 
   const [likingPostId, setLikingPostId] = useState(null);
 
+  // Bộ lọc GET /api/posts?type=...&time=...
+  const [postFilters, setPostFilters] = useState({
+    type: "",
+    time: "",
+  });
+
 
   // =====================================================
   // KIỂM TRA JWT KHI MỞ / REFRESH TRANG
@@ -779,17 +785,21 @@ export default function App() {
   }
 
 
-  async function fetchPosts(mode) {
+  async function fetchPosts(mode, filters) {
 
     setPostsLoading(true);
 
     setPostsError("");
 
+    const activeFilters = filters ?? postFilters;
+
     try {
 
-      // GET /api/posts hoặc GET /api/posts/me
+      // GET /api/posts (có type/time) hoặc GET /api/posts/me
       const data =
-        mode === "mine" ? await getMyPosts() : await getPosts();
+        mode === "mine"
+          ? await getMyPosts()
+          : await getPosts(activeFilters);
 
       setPosts(data);
 
@@ -852,6 +862,30 @@ export default function App() {
   function showMyPosts() {
 
     showPosts("mine");
+
+  }
+
+
+  // Bộ lọc chỉ áp dụng cho GET /api/posts.
+  function handleFilterChange(nextFilters) {
+
+    const filters = {
+
+      type: nextFilters.type ?? "",
+
+      time: nextFilters.time ?? "",
+
+    };
+
+    setPostFilters(filters);
+
+    setPostsSuccess("");
+
+    if (postMode !== "all") {
+      return;
+    }
+
+    fetchPosts("all", filters);
 
   }
 
@@ -1407,6 +1441,8 @@ export default function App() {
                detailError={detailError}
                postLikes={postLikes}
                likingPostId={likingPostId}
+               filters={postFilters}
+               onFilterChange={handleFilterChange}
                onCreate={() => openPostForm(null)}
                onEdit={openPostForm}
                onDelete={handleDeletePost}
