@@ -289,3 +289,202 @@
 .module-card-action:hover {
   background: #3667d6;
 }
+
+
+/* =====================================================
+   SMART MATCHING — MODULE 2 / BATCH 2
+   CHẾ ĐỘ: TÌM TRỌ / Ở GHÉP
+===================================================== */
+
+.match-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding: 5px;
+  border: 1px solid #e7ebf3;
+  border-radius: 12px;
+  background: #f4f6fb;
+}
+
+.match-tab {
+  flex: 1 1 0;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 9px;
+  color: #687995;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.match-tab:hover {
+  color: #2459d3;
+}
+
+.match-tab--active {
+  color: #2459d3;
+  background: #ffffff;
+  box-shadow: 0 6px 16px #20345c14;
+}
+
+
+/* =====================================================
+   DANH SÁCH ỨNG VIÊN TÌM TRỌ / Ở GHÉP
+===================================================== */
+
+.room-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.room-card {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  border: 1px solid #e7ebf3;
+  border-left: 4px solid #d7deec;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px #20345c0a;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.room-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 36px #20345c14;
+}
+
+.room-card--medium {
+  border-left-color: #f0b429;
+}
+
+.room-card--high {
+  border-left-color: #22a06b;
+}
+
+.room-card-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.room-card-person {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.room-card-score {
+  margin-top: 0;
+}
+
+.room-card--high .match-card-score-value {
+  color: #22a06b;
+}
+
+.room-card--medium .match-card-score-value {
+  color: #d19109;
+}
+
+.room-card-post {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: #45536a;
+  background: #f7f9fd;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.room-card-meta {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.room-card-meta-item {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #edf0f6;
+  border-radius: 10px;
+}
+
+.room-card-meta-label {
+  display: block;
+  margin-bottom: 4px;
+  color: #94a0b4;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.room-card-meta-value {
+  display: block;
+  color: #17243a;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.room-card .match-card-action {
+  margin-top: 14px;
+  width: 100%;
+}
+
+
+/* =====================================================
+   CHI TIẾT ỨNG VIÊN TÌM TRỌ / Ở GHÉP
+===================================================== */
+
+.room-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0 0;
+}
+
+.room-detail-item {
+  padding: 12px 14px;
+  border: 1px solid #edf0f6;
+  border-radius: 12px;
+  background: #fbfcff;
+}
+
+.room-detail-item--wide {
+  grid-column: 1 / -1;
+}
+
+.room-detail-item dt {
+  margin-bottom: 5px;
+  color: #94a0b4;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.room-detail-item dd {
+  margin: 0;
+  color: #17243a;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+
+@media (max-width: 850px) {
+  .room-list {
+    grid-template-columns: 1fr;
+  }
+
+  .room-card-meta,
+  .room-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .match-tabs {
+    flex-direction: column;
+  }
+}

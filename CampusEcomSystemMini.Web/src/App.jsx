@@ -51,6 +51,8 @@ import {
 import {
   getStudentMatches,
   getStudentMatch,
+  getRoomMatches,
+  getRoomMatch,
 } from "./services/matchingService";
 
 import "./styles/auth.css";
@@ -140,6 +142,23 @@ export default function App() {
   const [matchDetailLoading, setMatchDetailLoading] = useState(false);
 
   const [matchDetailError, setMatchDetailError] = useState("");
+
+  // Chế độ Smart Matching: tìm nhóm học hoặc tìm trọ / ở ghép
+  const [matchingMode, setMatchingMode] = useState("students");
+
+  const [roomMatches, setRoomMatches] = useState([]);
+
+  const [roomMatchesLoading, setRoomMatchesLoading] = useState(false);
+
+  const [roomMatchesError, setRoomMatchesError] = useState("");
+
+  const [roomMatchDetailOpen, setRoomMatchDetailOpen] = useState(false);
+
+  const [roomMatchDetail, setRoomMatchDetail] = useState(null);
+
+  const [roomMatchDetailLoading, setRoomMatchDetailLoading] = useState(false);
+
+  const [roomMatchDetailError, setRoomMatchDetailError] = useState("");
 
 
   // =====================================================
@@ -1228,6 +1247,46 @@ export default function App() {
 
     setMatchDetailOpen(false);
 
+    setRoomMatchDetailOpen(false);
+
+    fetchStudentMatches();
+
+    if (matchingMode === "rooms") {
+
+      fetchRoomMatches();
+
+    }
+
+  }
+
+
+  // Đổi chế độ Smart Matching: nhóm học hoặc tìm trọ / ở ghép
+  function handleChangeMatchingMode(mode) {
+
+    if (mode === matchingMode) {
+
+      return;
+
+    }
+
+    setMatchingMode(mode);
+
+    setMatchDetailOpen(false);
+
+    setRoomMatchDetailOpen(false);
+
+    setMatchDetailError("");
+
+    setRoomMatchDetailError("");
+
+    if (mode === "rooms") {
+
+      fetchRoomMatches();
+
+      return;
+
+    }
+
     fetchStudentMatches();
 
   }
@@ -1282,6 +1341,101 @@ export default function App() {
     setMatchDetailOpen(false);
 
     setMatchDetail(null);
+
+  }
+
+
+  async function fetchRoomMatches() {
+
+    setRoomMatchesLoading(true);
+
+    setRoomMatchesError("");
+
+    try {
+
+      // GET /api/matching/rooms
+      const data = await getRoomMatches();
+
+      setRoomMatches(data);
+
+    } catch (error) {
+
+      console.error(
+
+        "Fetch room matches failed:",
+
+        error
+
+      );
+
+      setRoomMatches([]);
+
+      setRoomMatchesError(
+
+        error.message ||
+
+        "Không thể tải kết quả tìm trọ / ở ghép."
+
+      );
+
+    } finally {
+
+      setRoomMatchesLoading(false);
+
+    }
+
+  }
+
+
+  async function handleOpenRoomMatchDetail(userId) {
+
+    setRoomMatchDetailOpen(true);
+
+    setRoomMatchDetailLoading(true);
+
+    setRoomMatchDetailError("");
+
+    setRoomMatchDetail(null);
+
+    try {
+
+      // GET /api/matching/rooms/{userId}
+      const data = await getRoomMatch(userId);
+
+      setRoomMatchDetail(data);
+
+    } catch (error) {
+
+      console.error(
+
+        "Fetch room match detail failed:",
+
+        error
+
+      );
+
+      setRoomMatchDetailError(
+
+        error.message ||
+
+        "Không tìm thấy ứng viên tìm trọ / ở ghép."
+
+      );
+
+    } finally {
+
+      setRoomMatchDetailLoading(false);
+
+    }
+
+  }
+
+
+  function closeRoomMatchDetail() {
+
+    setRoomMatchDetailOpen(false);
+
+    setRoomMatchDetail(null);
 
   }
 
@@ -1565,19 +1719,30 @@ export default function App() {
 
            <section className="pref-main">
 
-             <SmartMatching
-               matches={matches}
-               loading={matchesLoading}
-               error={matchesError}
-               detailOpen={matchDetailOpen}
-               detail={matchDetail}
-               detailLoading={matchDetailLoading}
-               detailError={matchDetailError}
-               onOpenDetail={handleOpenMatchDetail}
-               onCloseDetail={closeMatchDetail}
-               onEditPreferences={showPreferences}
-               onBack={showProfile}
-             />
+<SmartMatching
+                mode={matchingMode}
+                onChangeMode={handleChangeMatchingMode}
+                matches={matches}
+                loading={matchesLoading}
+                error={matchesError}
+                detailOpen={matchDetailOpen}
+                detail={matchDetail}
+                detailLoading={matchDetailLoading}
+                detailError={matchDetailError}
+                onOpenDetail={handleOpenMatchDetail}
+                onCloseDetail={closeMatchDetail}
+                roomMatches={roomMatches}
+                roomLoading={roomMatchesLoading}
+                roomError={roomMatchesError}
+                roomDetailOpen={roomMatchDetailOpen}
+                roomDetail={roomMatchDetail}
+                roomDetailLoading={roomMatchDetailLoading}
+                roomDetailError={roomMatchDetailError}
+                onOpenRoomDetail={handleOpenRoomMatchDetail}
+                onCloseRoomDetail={closeRoomMatchDetail}
+                onEditPreferences={showPreferences}
+                onBack={showProfile}
+              />
 
            </section>
 
