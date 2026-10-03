@@ -10,6 +10,7 @@ export default function UserProfile({
   onOpenPreferences,
   onViewMyPosts,
   onOpenMatching,
+  onOpenLeaderboard,
   loading,
   error,
   points,
@@ -128,6 +129,15 @@ export default function UserProfile({
           disabled={loading}
         >
           Smart Matching
+        </button>
+
+        <button
+          className="btn btn--ghost"
+          type="button"
+          onClick={onOpenLeaderboard}
+          disabled={loading}
+        >
+          Bảng xếp hạng
         </button>
       </div>
 
