@@ -8,6 +8,7 @@ using CampusEcomSystemMini.Application.Library.Books.UpdateBook;
 using CampusEcomSystemMini.Application.Library.Documents;
 using CampusEcomSystemMini.Application.Library.Documents.CreateDocument;
 using CampusEcomSystemMini.Application.Library.Documents.DeleteDocument;
+using CampusEcomSystemMini.Application.Library.Documents.DownloadDocument;
 using CampusEcomSystemMini.Application.Library.Documents.GetDocumentById;
 using CampusEcomSystemMini.Application.Library.Documents.GetDocuments;
 using CampusEcomSystemMini.Application.Library.Documents.GetMyDocuments;
@@ -237,6 +238,63 @@ public class LibraryController : ControllerBase
                 return Created(
                     $"/api/library/documents/{result.Response!.Id}",
                     result.Response);
+        }
+    }
+
+    // GET /api/library/documents/{id}/download
+    //
+    // Tải tài liệu theo workflow:
+    //   JWT -> Document -> Pricing -> Balance -> Transaction
+    //       -> Watermark -> Commit -> Download
+    //
+    // Endpoint này là nơi duy nhất được phép trả file gốc.
+    [HttpGet("documents/{id:guid}/download")]
+    public async Task<IActionResult> DownloadDocument(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(
+            new DownloadDocumentQuery(id),
+            cancellationToken);
+
+        switch (result.Outcome)
+        {
+            // Tài liệu không tồn tại.
+            case DownloadDocumentOutcome.NotFound:
+                return NotFound();
+
+            // File gốc không còn trên storage.
+            case DownloadDocumentOutcome.FileMissing:
+                return NotFound(result.ErrorMessage);
+
+            // Không đủ điểm để mua tài liệu trả phí.
+            case DownloadDocumentOutcome.InsufficientPoints:
+                return BadRequest(result.ErrorMessage);
+
+            // Hệ thống điểm chưa triển khai nên không mua được tài liệu trả phí.
+            case DownloadDocumentOutcome.PointsUnavailable:
+                return Conflict(result.ErrorMessage);
+
+            // Watermark thất bại, không trả file và không giữ giao dịch điểm.
+            case DownloadDocumentOutcome.WatermarkFailed:
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    result.ErrorMessage);
+
+            // Lỗi giao dịch điểm, không trả file.
+            case DownloadDocumentOutcome.PointTransactionFailed:
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    result.ErrorMessage);
+
+            default:
+                var response = result.Response!;
+
+                // Trả file đã đóng dấu watermark.
+                return File(
+                    response.Content,
+                    response.ContentType,
+                    response.FileName);
         }
     }
 

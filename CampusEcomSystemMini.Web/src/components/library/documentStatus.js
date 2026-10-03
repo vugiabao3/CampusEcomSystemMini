@@ -74,4 +74,32 @@ export function formatPrice(price) {
   return `${value.toLocaleString("vi-VN")} điểm`;
 }
 
+// Nhãn nút tải tài liệu.
+// Tài liệu trả phí hiện rõ số điểm sẽ bị trừ,
+// tài liệu miễn phí không trừ điểm.
+export function getDownloadLabel(document) {
+  if (isPaidDocument(document?.pricingType)) {
+    return `Tải (${formatPrice(document?.price)})`;
+  }
+
+  return "Tải tài liệu";
+}
+
+// Tài liệu do chính người đang đăng nhập đăng thì tải lại
+// không bị trừ điểm.
+export function getDownloadHint(document, isOwner) {
+  if (isOwner) {
+    return "Tải lại tài liệu của bạn, không trừ điểm.";
+  }
+
+  if (isPaidDocument(document?.pricingType)) {
+    return `Tải tài liệu này sẽ trừ ${formatPrice(
+      document?.price
+    )} vào số dư của bạn.`;
+
+  }
+
+  return "Tài liệu miễn phí, tải không mất điểm.";
+}
+
 export { formatBookDate };

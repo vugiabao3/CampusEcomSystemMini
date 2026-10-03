@@ -3,7 +3,7 @@ import DocumentFilter from "./DocumentFilter.jsx";
 import DocumentForm from "./DocumentForm.jsx";
 import DocumentList from "./DocumentList.jsx";
 
-// Tài liệu số — MODULE 4 / BATCH 2.
+// Tài liệu số — MODULE 4 / BATCH 2 + BATCH 3.
 //
 // Tài liệu miễn phí / tài liệu trả phí
 //   ↓
@@ -13,6 +13,7 @@ import DocumentList from "./DocumentList.jsx";
 // POST /api/library/documents         (multipart/form-data)
 // PUT  /api/library/documents/{id}    (chỉ sửa metadata)
 // DELETE /api/library/documents/{id}
+// GET  /api/library/documents/{id}/download  (file đã có watermark)
 export default function DocumentPanel({
   mode,
   onChangeMode,
@@ -30,12 +31,16 @@ export default function DocumentPanel({
   onOpenDetail,
   onCloseForm,
   onCloseDetail,
+  onDownload,
   formOpen,
   formDocument,
   detailOpen,
   detail,
   detailLoading,
   detailError,
+  downloadingId,
+  downloadError,
+  downloadSuccess,
 }) {
   const currentUserId = user?.id ?? user?.Id ?? "";
 
@@ -50,6 +55,25 @@ export default function DocumentPanel({
 
   return (
     <>
+      {/* Khi tải tài liệu, thông báo kết quả / lỗi trả về từ
+          GET /api/library/documents/{id}/download.
+          Modal chi tiết tự hiển thị nên chỉ hiện ở đây khi modal đã đóng. */}
+      {!detailOpen && (
+        <>
+          {downloadError && (
+            <div className="message message-error" role="alert">
+              {downloadError}
+            </div>
+          )}
+
+          {downloadSuccess && (
+            <div className="message message-success" role="status">
+              {downloadSuccess}
+            </div>
+          )}
+        </>
+      )}
+
       <div className="posts-toolbar">
         <div className="posts-filter-chips">
           {[
@@ -91,9 +115,11 @@ export default function DocumentPanel({
         loading={loading}
         error={error}
         currentUserId={currentUserId}
+        downloadingId={downloadingId}
         onOpenDetail={onOpenDetail}
         onEdit={onEdit}
         onDelete={onDelete}
+        onDownload={onDownload}
       />
 
       {formOpen && (
@@ -112,8 +138,12 @@ export default function DocumentPanel({
           loading={detailLoading}
           error={detailError}
           isOwner={isDetailOwner}
+          downloading={downloadingId === detail?.id}
+          downloadError={downloadError}
+          downloadSuccess={downloadSuccess}
           onEdit={onEdit}
           onDelete={onDelete}
+          onDownload={onDownload}
           onClose={onCloseDetail}
         />
       )}

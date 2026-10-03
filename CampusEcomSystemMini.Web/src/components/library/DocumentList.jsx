@@ -7,9 +7,11 @@ export default function DocumentList({
   loading,
   error,
   currentUserId,
+  downloadingId,
   onOpenDetail,
   onEdit,
   onDelete,
+  onDownload,
 }) {
   if (loading) {
     return (
@@ -48,9 +50,11 @@ export default function DocumentList({
             key={document.id}
             document={document}
             isOwner={isOwner}
+            downloading={downloadingId === document.id}
             onOpenDetail={onOpenDetail}
             onEdit={onEdit}
             onDelete={onDelete}
+            onDownload={onDownload}
           />
         );
       })}
