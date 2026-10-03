@@ -6,7 +6,7 @@ export default function HomePage({
   onViewMyPosts,
   onOpenMatching,
   onOpenLostFound,
-  onOpenConnections,
+  onOpenMessenger,
 }) {
   const fullName =
     user?.fullName ??
@@ -181,7 +181,7 @@ export default function HomePage({
 
             <button
               type="button"
-              onClick={onOpenConnections}
+              onClick={onOpenMessenger}
             >
               Mở Messenger
             </button>

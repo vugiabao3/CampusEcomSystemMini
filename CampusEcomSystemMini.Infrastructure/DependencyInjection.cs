@@ -55,6 +55,18 @@ public static class DependencyInjection
             ConnectionRequestRepository>();
 
         services.AddScoped<
+            IConversationRepository,
+            ConversationRepository>();
+
+        services.AddScoped<
+            IConversationParticipantRepository,
+            ConversationParticipantRepository>();
+
+        services.AddScoped<
+            IMessageRepository,
+            MessageRepository>();
+
+        services.AddScoped<
             IPasswordHasher,
             PasswordHasher>();
 

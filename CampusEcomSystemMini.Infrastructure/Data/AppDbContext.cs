@@ -27,6 +27,12 @@ public class AppDbContext : DbContext
 
     public DbSet<ConnectionRequest> ConnectionRequests {get;set;}
 
+    public DbSet<Conversation> Conversations {get;set;}
+
+    public DbSet<ConversationParticipant> ConversationParticipants {get;set;}
+
+    public DbSet<Message> Messages {get;set;}
+
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
     {
@@ -147,6 +153,57 @@ entity.HasOne<Post>()
             entity.HasOne<User>()
                 .WithMany()
                 .HasForeignKey(x => x.ReceiverId)
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<Conversation>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+        });
+
+        modelBuilder.Entity<ConversationParticipant>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            // Một người dùng chỉ tham gia một cuộc trò chuyện một lần.
+            entity.HasIndex(x => new { x.ConversationId, x.UserId })
+                .IsUnique();
+
+            entity.HasIndex(x => x.UserId);
+
+            entity.HasOne<Conversation>()
+                .WithMany()
+                .HasForeignKey(x => x.ConversationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // SQL Server không cho phép nhiều đường cascade
+            // (Users -> ConnectionRequests và Users -> ConversationParticipants),
+            // nên participant không cascade trực tiếp từ User.
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<Message>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            entity.HasIndex(x => x.ConversationId);
+
+            entity.HasIndex(x => x.SenderId);
+
+            entity.HasOne<Conversation>()
+                .WithMany()
+                .HasForeignKey(x => x.ConversationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // SQL Server không cho phép nhiều đường cascade
+            // (Users -> ConnectionRequests và Users -> Messages),
+            // nên tin nhắn không cascade trực tiếp từ User.
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(x => x.SenderId)
                 .OnDelete(DeleteBehavior.NoAction);
         });
     }

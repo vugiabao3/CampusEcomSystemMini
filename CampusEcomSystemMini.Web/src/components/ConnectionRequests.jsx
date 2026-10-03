@@ -89,6 +89,7 @@ export default function ConnectionRequests({
   onSend,
   onAccept,
   onReject,
+  onOpenMessenger,
   onBack,
 }) {
   const isSentMode = mode === "sent";
@@ -203,6 +204,14 @@ export default function ConnectionRequests({
       )}
 
       <div className="posts-toolbar">
+        <button
+          className="text-button"
+          type="button"
+          onClick={onOpenMessenger}
+        >
+          Mở Messenger
+        </button>
+
         <button
           className="text-button"
           type="button"

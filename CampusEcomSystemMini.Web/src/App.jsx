@@ -15,6 +15,7 @@ import PostsPage from "./components/PostsPage";
 import SmartMatching from "./components/SmartMatching";
 import LostFoundPage from "./components/LostFoundPage";
 import ConnectionRequests from "./components/ConnectionRequests";
+import MessengerPage from "./components/messenger/MessengerPage.jsx";
 
 import {
   getMe,
@@ -75,6 +76,12 @@ import {
   acceptConnectionRequest,
   rejectConnectionRequest,
 } from "./services/connectionService";
+
+import {
+  getConversations,
+  getConversation,
+  getConversationMessages,
+} from "./services/conversationService.js";
 
 import "./styles/auth.css";
 import "./styles/preferences.css";
@@ -264,6 +271,35 @@ export default function App() {
   const [sending, setSending] = useState(false);
 
   const [sendError, setSendError] = useState("");
+
+  // =====================================================
+  // MESSENGER (MODULE 5 / BATCH 2)
+  // =====================================================
+
+  const [conversations, setConversations] = useState([]);
+
+  const [conversationsLoading, setConversationsLoading] = useState(false);
+
+  const [conversationsError, setConversationsError] = useState("");
+
+  // Cuộc trò chuyện đang được chọn trong Messenger
+  const [selectedConversation, setSelectedConversation] = useState(null);
+
+  const [selectedConversationId, setSelectedConversationId] = useState(null);
+
+  // Chi tiết cuộc trò chuyện (participant)
+  const [conversationDetail, setConversationDetail] = useState(null);
+
+  const [conversationDetailLoading, setConversationDetailLoading] = useState(false);
+
+  const [conversationDetailError, setConversationDetailError] = useState("");
+
+  // Lịch sử tin nhắn của cuộc trò chuyện đang chọn
+  const [messages, setMessages] = useState([]);
+
+  const [messagesLoading, setMessagesLoading] = useState(false);
+
+  const [messagesError, setMessagesError] = useState("");
 
 
   // =====================================================
@@ -2344,6 +2380,127 @@ export default function App() {
   }
 
   // =====================================================
+  // MESSENGER (MODULE 5 / BATCH 2)
+  // =====================================================
+
+  async function fetchConversations() {
+    setConversationsLoading(true);
+
+    setConversationsError("");
+
+    try {
+      // GET /api/conversations
+      const data = await getConversations();
+
+      setConversations(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error(
+        "Fetch conversations failed:",
+        error
+      );
+
+      setConversations([]);
+
+      setConversationsError(
+        error.message ||
+          "Không thể tải danh sách cuộc trò chuyện."
+      );
+    } finally {
+      setConversationsLoading(false);
+    }
+  }
+
+  function showMessenger() {
+    setPage("messenger");
+
+    setError("");
+
+    setSuccess("");
+
+    setSelectedConversation(null);
+
+    setSelectedConversationId(null);
+
+    setConversationDetail(null);
+
+    setConversationDetailError("");
+
+    setMessages([]);
+
+    setMessagesError("");
+
+    fetchConversations();
+  }
+
+  // Chọn cuộc trò chuyện: tải chi tiết (participant)
+  // và lịch sử tin nhắn từ Backend.
+  async function handleSelectConversation(conversation) {
+    const conversationId = conversation?.conversationId;
+
+    setSelectedConversation(conversation);
+
+    setSelectedConversationId(conversationId);
+
+    setConversationDetail(null);
+
+    setConversationDetailError("");
+
+    setMessages([]);
+
+    setMessagesError("");
+
+    setConversationDetailLoading(true);
+
+    setMessagesLoading(true);
+
+    try {
+      // GET /api/conversations/{id}
+      const detail = await getConversation(conversationId);
+
+      setConversationDetail(detail);
+    } catch (error) {
+      console.error(
+        "Fetch conversation detail failed:",
+        error
+      );
+
+      setConversationDetail(null);
+
+      setConversationDetailError(
+        error.status === 403
+          ? "Bạn không phải participant của cuộc trò chuyện này."
+          : error.message ||
+              "Không thể tải chi tiết cuộc trò chuyện."
+      );
+    } finally {
+      setConversationDetailLoading(false);
+    }
+
+    try {
+      // GET /api/conversations/{conversationId}/messages
+      const data = await getConversationMessages(conversationId);
+
+      setMessages(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error(
+        "Fetch messages failed:",
+        error
+      );
+
+      setMessages([]);
+
+      setMessagesError(
+        error.status === 403
+          ? "Bạn không phải participant của cuộc trò chuyện này."
+          : error.message ||
+              "Không thể tải lịch sử tin nhắn."
+      );
+    } finally {
+      setMessagesLoading(false);
+    }
+  }
+
+  // =====================================================
   // RENDER
   // =====================================================
 
@@ -2579,7 +2736,7 @@ export default function App() {
             onViewMyPosts={showMyPosts}
             onOpenMatching={showSmartMatching}
             onOpenLostFound={showLostFound}
-            onOpenConnections={showConnections}
+            onOpenMessenger={showMessenger}
           />
 
        )}
@@ -2805,6 +2962,74 @@ claimsItem={claimsItem}
                 onSend={handleSendConnectionRequest}
                 onAccept={handleAcceptConnectionRequest}
                 onReject={handleRejectConnectionRequest}
+                onOpenMessenger={showMessenger}
+                onBack={showProfile}
+              />
+
+            </section>
+
+
+            <footer className="site-footer">
+              CampusEcomSystemMini · Student & Campus Utility
+            </footer>
+
+          </main>
+
+        )}
+
+
+        {/* ================================================
+            TRANG MESSENGER (MODULE 5 / BATCH 2)
+        ================================================= */}
+
+        {page === "messenger" && user && (
+
+          <main className="auth-page">
+
+            <div className="auth-background-shape shape-one" />
+
+            <div className="auth-background-shape shape-two" />
+
+
+            <header className="site-header">
+
+              <div className="brand">
+
+                <span className="brand-icon">
+                  C
+                </span>
+
+                <span>
+                  Campus
+                  <span className="brand-highlight">
+                    Ecom
+                  </span>
+                </span>
+              </div>
+
+              <span className="header-label">
+                STUDENT COMMUNITY
+              </span>
+            </header>
+
+
+            <section className="pref-main">
+
+              <MessengerPage
+                conversations={conversations}
+                loading={conversationsLoading}
+                error={conversationsError}
+                selectedConversation={selectedConversation}
+                selectedConversationId={selectedConversationId}
+                detail={conversationDetail}
+                detailLoading={conversationDetailLoading}
+                detailError={conversationDetailError}
+                messages={messages}
+                messagesLoading={messagesLoading}
+                messagesError={messagesError}
+                currentUserId={user?.id ?? user?.Id ?? ""}
+                onSelectConversation={handleSelectConversation}
+                onOpenConnections={showConnections}
                 onBack={showProfile}
               />
 
