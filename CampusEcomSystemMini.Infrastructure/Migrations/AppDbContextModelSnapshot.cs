@@ -300,6 +300,35 @@ namespace CampusEcomSystemMini.Infrastructure.Migrations
             // LOST & FOUND
             // =========================================================
 
+            modelBuilder.Entity("CampusEcomSystemMini.Domain.Entities.GamificationPointTransaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Balance")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Change")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("GamificationPointTransactions");
+                });
+
             modelBuilder.Entity("CampusEcomSystemMini.Domain.Entities.LostFoundRecord", b =>
             {
                 b.Property<Guid>("Id")
@@ -524,6 +553,47 @@ namespace CampusEcomSystemMini.Infrastructure.Migrations
             // SECRET QUESTION
             // =========================================================
 
+            modelBuilder.Entity("CampusEcomSystemMini.Domain.Entities.Report", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("PostId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("ReporterId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ReviewedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PostId");
+
+                    b.HasIndex("ReporterId");
+
+                    b.ToTable("Reports");
+                });
+
             modelBuilder.Entity("CampusEcomSystemMini.Domain.Entities.SecretQuestion", b =>
             {
                 b.Property<Guid>("Id")
@@ -586,12 +656,19 @@ namespace CampusEcomSystemMini.Infrastructure.Migrations
                 b.Property<string>("Phone")
                     .HasColumnType("nvarchar(max)");
 
-                b.Property<string>("Role")
-                    .IsRequired()
-                    .HasColumnType("nvarchar(max)");
+                    b.Property<int>("ReputationPoints")
+                        .HasColumnType("int");
 
-                b.Property<DateTime>("UpdatedAt")
-                    .HasColumnType("datetime2");
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                 b.HasKey("Id");
 
@@ -601,6 +678,32 @@ namespace CampusEcomSystemMini.Infrastructure.Migrations
             // =========================================================
             // RELATIONSHIPS
             // =========================================================
+                b.HasKey("Id");
+
+                b.ToTable("Users");
+            });
+
+            // =========================================================
+            // RELATIONSHIPS
+            // =========================================================
+
+            modelBuilder.Entity("CampusEcomSystemMini.Domain.Entities.GamificationPointTransaction", b =>
+            {
+                b.HasOne("CampusEcomSystemMini.Domain.Entities.User", null)
+                    .WithMany()
+                    .HasForeignKey("UserId")
+                    .OnDelete(DeleteBehavior.NoAction)
+                    .IsRequired();
+            });
+
+            modelBuilder.Entity("CampusEcomSystemMini.Domain.Entities.LostFoundRecord", b =>
+            {
+                b.HasOne("CampusEcomSystemMini.Domain.Entities.Post", null)
+                    .WithMany()
+                    .HasForeignKey("PostId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
+            });
 
             modelBuilder.Entity("CampusEcomSystemMini.Domain.Entities.BookExchangePost", b =>
             {
@@ -748,11 +851,26 @@ namespace CampusEcomSystemMini.Infrastructure.Migrations
 
             // Preference
             modelBuilder.Entity("CampusEcomSystemMini.Domain.Entities.Preference", b =>
+                {
+                    b.HasOne("CampusEcomSystemMini.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CampusEcomSystemMini.Domain.Entities.Report", b =>
             {
+                b.HasOne("CampusEcomSystemMini.Domain.Entities.Post", null)
+                    .WithMany()
+                    .HasForeignKey("PostId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
+
                 b.HasOne("CampusEcomSystemMini.Domain.Entities.User", null)
                     .WithMany()
-                    .HasForeignKey("UserId")
-                    .OnDelete(DeleteBehavior.Cascade)
+                    .HasForeignKey("ReporterId")
+                    .OnDelete(DeleteBehavior.NoAction)
                     .IsRequired();
             });
 

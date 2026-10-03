@@ -73,6 +73,26 @@ public static class DependencyInjection
             IClaimRepository,
             ClaimRepository>();
 
+<<<<<<        // =========================================================
+        // MODULE 6 - GAMIFICATION
+        // =========================================================
+
+        services.AddScoped<
+            IGamificationPointTransactionRepository,
+            GamificationPointTransactionRepository>();
+
+        services.AddScoped<
+            IGamificationService,
+            GamificationService>();
+
+        // =========================================================
+        // MODULE 6 - REPORT
+        // =========================================================
+
+        services.AddScoped<
+            IReportRepository,
+            ReportRepository>();
+
         // =========================================================
         // MODULE 4 - BOOK EXCHANGE
         // =========================================================
@@ -112,11 +132,6 @@ public static class DependencyInjection
         // =========================================================
         // MODULE 6 - POINT SERVICE
         // =========================================================
-        //
-        // Module 4 chỉ cần abstraction IPointService.
-        // Implementation thật của hệ thống điểm sẽ thuộc Module 6.
-        // Hiện tại dùng implementation tạm thời.
-        //
 
         services.AddScoped<
             IPointService,

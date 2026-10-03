@@ -23,6 +23,11 @@ public class AppDbContext : DbContext
 
     public DbSet<Claim> Claims { get; set; }
 
+    // Module 6 - Gamification & Admin Hub
+    public DbSet<GamificationPointTransaction> GamificationPointTransactions { get; set; }
+
+    public DbSet<Report> Reports { get; set; }
+
     // Module 5 - Matching / Messenger / Notification
     public DbSet<ConnectionRequest> ConnectionRequests { get; set; }
 
@@ -34,7 +39,7 @@ public class AppDbContext : DbContext
 
     public DbSet<Notification> Notifications { get; set; }
 
-    // Library / Book Exchange
+    // Module 4 - Library / Book Exchange
     public DbSet<BookExchangePost> BookExchangePosts { get; set; }
 
     public DbSet<Document> Documents { get; set; }
@@ -139,6 +144,31 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.NoAction);
         });
 
+        modelBuilder.Entity<Report>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            entity.HasIndex(x => x.PostId);
+
+            // SQL Server không cho phép nhiều đường cascade
+            // (Users -> Posts -> Reports và Users -> Reports),
+            // nên báo cáo không cascade trực tiếp từ User.
+            entity.HasOne<Post>()
+                .WithMany()
+                .HasForeignKey(x => x.PostId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(x => x.ReporterId)
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<GamificationPointTransaction>(entity =>
+        {
+            // GIỮ NGUYÊN CODE GAMIFICATION CỦA MODULE 6 Ở ĐÂY
+        });
+
         // =========================================================
         // MODULE 5 - CONNECTION REQUEST
         // =========================================================
@@ -148,12 +178,8 @@ public class AppDbContext : DbContext
             entity.HasKey(x => x.Id);
 
             entity.HasIndex(x => x.SenderId);
-
             entity.HasIndex(x => x.ReceiverId);
 
-            // Users -> ConnectionRequests có 2 FK:
-            // SenderId và ReceiverId.
-            // Không cascade để tránh multiple cascade paths.
             entity.HasOne<User>()
                 .WithMany()
                 .HasForeignKey(x => x.SenderId)
@@ -178,7 +204,6 @@ public class AppDbContext : DbContext
         {
             entity.HasKey(x => x.Id);
 
-            // Một user chỉ tham gia một conversation một lần.
             entity.HasIndex(x => new { x.ConversationId, x.UserId })
                 .IsUnique();
 
@@ -189,7 +214,6 @@ public class AppDbContext : DbContext
                 .HasForeignKey(x => x.ConversationId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Không cascade trực tiếp từ User.
             entity.HasOne<User>()
                 .WithMany()
                 .HasForeignKey(x => x.UserId)
@@ -205,7 +229,6 @@ public class AppDbContext : DbContext
             entity.HasKey(x => x.Id);
 
             entity.HasIndex(x => x.ConversationId);
-
             entity.HasIndex(x => x.SenderId);
 
             entity.HasOne<Conversation>()
@@ -213,7 +236,6 @@ public class AppDbContext : DbContext
                 .HasForeignKey(x => x.ConversationId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Không cascade trực tiếp từ User.
             entity.HasOne<User>()
                 .WithMany()
                 .HasForeignKey(x => x.SenderId)
@@ -226,11 +248,16 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Notification>(entity =>
         {
+            // GIỮ NGUYÊN PHẦN CODE NOTIFICATION ĐANG CÓ
+        });
+        {
             entity.HasKey(x => x.Id);
 
             entity.HasIndex(x => x.UserId);
 
-            // Không cascade trực tiếp từ User để tránh multiple cascade paths.
+<<<<<<            // SQL Server không cho phép nhiều đường cascade
+            // (Users -> Posts -> Claims -> ... và Users -> GamificationPointTransactions),
+            // nên lịch sử điểm không cascade trực tiếp từ User.
             entity.HasOne<User>()
                 .WithMany()
                 .HasForeignKey(x => x.UserId)

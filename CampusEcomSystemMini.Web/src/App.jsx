@@ -14,10 +14,11 @@ import Preferences from "./components/Preferences";
 import PostsPage from "./components/PostsPage";
 import SmartMatching from "./components/SmartMatching";
 import LostFoundPage from "./components/LostFoundPage";
+import Leaderboard from "./components/gamification/Leaderboard";
+
 import ConnectionRequests from "./components/ConnectionRequests";
 import MessengerPage from "./components/messenger/MessengerPage.jsx";
 import LibraryPage from "./components/library/LibraryPage";
-
 import {
   getMe,
   getToken,
@@ -72,6 +73,16 @@ import {
 } from "./services/lostFoundService";
 
 import {
+  getMyPoints,
+  getPointHistory,
+} from "./services/gamificationService";
+
+import {
+  getLeaderboard,
+  getMyRank,
+} from "./services/leaderboardService";
+
+import {
   sendConnectionRequest,
   getConnectionRequests,
   acceptConnectionRequest,
@@ -114,12 +125,12 @@ import {
   updateDocumentReview,
   deleteDocumentReview,
 } from "./services/libraryService";
-
 import "./styles/auth.css";
 import "./styles/preferences.css";
 import "./styles/posts.css";
 import "./styles/matching.css";
 import "./styles/lostFound.css";
+import "./styles/gamification.css";
 import "./styles/messenger.css";
 import "./styles/library.css";
 
@@ -488,6 +499,41 @@ export default function App() {
   // Review đang xóa, dùng để disable đúng nút xóa.
   const [deletingDocumentReviewId, setDeletingDocumentReviewId] =
     useState(null);
+
+
+  // =====================================================
+  // GAMIFICATION (MODULE 6 / BATCH 1)
+  // =====================================================
+
+  // Điểm uy tín hiện tại.
+  const [points, setPoints] = useState(null);
+
+  const [pointsLoading, setPointsLoading] = useState(false);
+
+  const [pointsError, setPointsError] = useState("");
+
+  // Lịch sử cộng / trừ điểm.
+  const [pointHistory, setPointHistory] = useState([]);
+
+  const [pointHistoryLoading, setPointHistoryLoading] = useState(false);
+
+  const [pointHistoryError, setPointHistoryError] = useState("");
+
+
+  // =====================================================
+  // LEADERBOARD (MODULE 6 / BATCH 2)
+  // =====================================================
+
+  // "month" | "year"
+  const [leaderboardPeriod, setLeaderboardPeriod] = useState("month");
+
+  const [leaderboardEntries, setLeaderboardEntries] = useState([]);
+
+  const [leaderboardMyRank, setLeaderboardMyRank] = useState(null);
+
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+
+  const [leaderboardError, setLeaderboardError] = useState("");
 
 
   // =====================================================
@@ -860,6 +906,81 @@ export default function App() {
   }
 
 
+  async function fetchGamification() {
+
+    setPointsLoading(true);
+
+    setPointsError("");
+
+    setPointHistoryLoading(true);
+
+    setPointHistoryError("");
+
+    try {
+
+      // GET /api/gamification/me
+      setPoints(await getMyPoints());
+
+    } catch (error) {
+
+      console.error(
+
+        "Fetch my points failed:",
+
+        error
+
+      );
+
+      setPoints(null);
+
+      setPointsError(
+
+        error.message ||
+
+        "Không thể tải điểm uy tín."
+
+      );
+
+    } finally {
+
+      setPointsLoading(false);
+
+    }
+
+    try {
+
+      // GET /api/gamification/history
+      setPointHistory(await getPointHistory());
+
+    } catch (error) {
+
+      console.error(
+
+        "Fetch point history failed:",
+
+        error
+
+      );
+
+      setPointHistory([]);
+
+      setPointHistoryError(
+
+        error.message ||
+
+        "Không thể tải lịch sử điểm."
+
+      );
+
+    } finally {
+
+      setPointHistoryLoading(false);
+
+    }
+
+  }
+
+
   function showProfile() {
 
     setPage("profile");
@@ -869,6 +990,86 @@ export default function App() {
     setSuccess("");
 
     fetchProfile();
+
+    fetchGamification();
+
+  }
+
+
+  // Bảng xếp hạng và thứ hạng của bản thân,
+  // cả hai dùng cùng một kỳ để số thứ hạng khớp nhau.
+  async function fetchLeaderboard(period) {
+
+    setLeaderboardLoading(true);
+
+    setLeaderboardError("");
+
+    try {
+
+      // GET /api/leaderboard?period=month | year
+      setLeaderboardEntries(await getLeaderboard(period));
+
+    } catch (error) {
+
+      console.error("Fetch leaderboard failed:", error);
+
+      setLeaderboardEntries([]);
+
+      setLeaderboardError(
+        error.message || "Không thể tải bảng xếp hạng."
+      );
+
+    }
+
+    try {
+
+      // GET /api/leaderboard/me?period=month | year
+      setLeaderboardMyRank(await getMyRank(period));
+
+    } catch (error) {
+
+      console.error("Fetch my rank failed:", error);
+
+      setLeaderboardMyRank(null);
+
+      setLeaderboardError(
+        error.message || "Không thể tải thứ hạng của bạn."
+      );
+
+    } finally {
+
+      setLeaderboardLoading(false);
+
+    }
+
+  }
+
+
+  function showLeaderboard() {
+
+    setPage("leaderboard");
+
+    setError("");
+
+    setSuccess("");
+
+    setLeaderboardPeriod("month");
+
+    fetchLeaderboard("month");
+
+  }
+
+
+  // Đổi kỳ xếp hạng: Tháng / Năm.
+  async function handleChangeLeaderboardPeriod(period) {
+
+    if (period === leaderboardPeriod) {
+      return;
+    }
+
+    setLeaderboardPeriod(period);
+
+    await fetchLeaderboard(period);
 
   }
 
@@ -4466,6 +4667,67 @@ onEditPreferences={showPreferences}
 
 
        {/* ================================================
+           TRANG BẢNG XẾP HẠNG (MODULE 6 / BATCH 2)
+       ================================================= */}
+
+       {page === "leaderboard" && user && (
+
+         <main className="auth-page">
+
+           <div className="auth-background-shape shape-one" />
+
+           <div className="auth-background-shape shape-two" />
+
+
+           <header className="site-header">
+
+             <div className="brand">
+
+               <span className="brand-icon">
+                 C
+               </span>
+
+               <span>
+                 Campus
+                 <span className="brand-highlight">
+                   Ecom
+                 </span>
+               </span>
+
+             </div>
+
+             <span className="header-label">
+               STUDENT COMMUNITY
+             </span>
+
+           </header>
+
+
+           <section className="pref-main">
+
+             <Leaderboard
+               period={leaderboardPeriod}
+               onChangePeriod={handleChangeLeaderboardPeriod}
+               entries={leaderboardEntries}
+               myRank={leaderboardMyRank}
+               loading={leaderboardLoading}
+               error={leaderboardError}
+               onBack={showProfile}
+             />
+
+           </section>
+
+
+           <footer className="site-footer">
+             CampusEcomSystemMini · Student & Campus Utility
+           </footer>
+
+         </main>
+
+       )}
+
+
+       {/* ================================================
            TRANG CAMPUS LOST & FOUND
        ================================================= */}
 
@@ -4975,9 +5237,16 @@ claimsItem={claimsItem}
                     onOpenPreferences={showPreferences}
                     onViewMyPosts={showMyPosts}
                     onOpenMatching={showSmartMatching}
+                    onOpenLeaderboard={showLeaderboard}
                     loading={loading}
-                   error={error}
-                 />
+                    error={error}
+                    points={points}
+                    pointsLoading={pointsLoading}
+                    pointsError={pointsError}
+                    history={pointHistory}
+                    historyLoading={pointHistoryLoading}
+                    historyError={pointHistoryError}
+                  />
 
                )}
 

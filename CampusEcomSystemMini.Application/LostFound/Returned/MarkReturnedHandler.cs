@@ -1,3 +1,4 @@
+using CampusEcomSystemMini.Application.Gamification;
 using CampusEcomSystemMini.Application.Interfaces;
 using CampusEcomSystemMini.Domain.Entities;
 using MediatR;
@@ -17,17 +18,20 @@ public class MarkReturnedHandler
     private readonly IClaimRepository _claimRepository;
     private readonly ILostFoundRepository _lostFoundRepository;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IGamificationService _gamificationService;
 
     public MarkReturnedHandler(
         IPostRepository postRepository,
         IClaimRepository claimRepository,
         ILostFoundRepository lostFoundRepository,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IGamificationService gamificationService)
     {
         _postRepository = postRepository;
         _claimRepository = claimRepository;
         _lostFoundRepository = lostFoundRepository;
         _currentUserService = currentUserService;
+        _gamificationService = gamificationService;
     }
 
     public async Task<MarkReturnedResult> Handle(
@@ -131,6 +135,15 @@ public class MarkReturnedHandler
         }
 
         await _lostFoundRepository.SaveChangesAsync(cancellationToken);
+
+        // Module 6 Integration: người nhặt đồ trả đồ thành công
+        // được thưởng điểm, ghi qua GamificationService.
+        // Handler này chỉ thành công một lần cho mỗi bài đăng
+        // nên không thể thưởng trùng.
+        await _gamificationService.ApplyRuleAsync(
+            post.UserId,
+            GamificationPointRules.LostFoundReturnedReason,
+            cancellationToken);
 
         return new MarkReturnedResult(
             MarkReturnedOutcome.Returned,

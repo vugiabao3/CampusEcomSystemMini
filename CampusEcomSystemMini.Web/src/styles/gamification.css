@@ -1,0 +1,361 @@
+/* =====================================================
+   GAMIFICATION — ĐIỂM UY TÍN & LỊCH SỬ ĐIỂM (MODULE 6)
+   Dùng lại màu và khoảng cách của auth.css / lostFound.css
+   để hòa vào trang hồ sơ hiện tại.
+===================================================== */
+
+.points-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 18px;
+  padding: 22px 24px;
+  border: 1px solid #e7ebf3;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #f7f9ff 0%, #eef3ff 100%);
+}
+
+.points-card-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.points-value {
+  color: #17243a;
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.points-caption {
+  color: #75829a;
+  font-size: 12px;
+}
+
+.points-card-side {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  text-align: right;
+}
+
+.points-label {
+  color: #75829a;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+}
+
+.points-user-id {
+  max-width: 220px;
+  color: #45536a;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+/* Lịch sử điểm */
+
+.points-history {
+  margin-top: 22px;
+}
+
+.points-history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.points-history-count {
+  color: #8a96aa;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.points-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.points-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid #e7ebf3;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.points-item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.points-item-reason {
+  color: #17243a;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.points-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #8a96aa;
+  font-size: 11px;
+}
+
+.points-item-type {
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: #2459d3;
+  background: #e7efff;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.points-item-side {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.points-change {
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.points-change--plus {
+  color: #027a48;
+  background: #d3f8df;
+}
+
+.points-change--minus {
+  color: #b42318;
+  background: #fee4e2;
+}
+
+.points-item-balance {
+  color: #8a96aa;
+  font-size: 10px;
+}
+
+/* =====================================================
+   LEADERBOARD — BẢNG XẾP HẠNG (MODULE 6 / BATCH 2)
+   Dùng lại đúng bộ màu và bo góc của matching.css
+   để hòa vào các trang hiện có.
+===================================================== */
+
+.leaderboard-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding: 5px;
+  border: 1px solid #e7ebf3;
+  border-radius: 12px;
+  background: #f4f6fb;
+}
+
+.leaderboard-tab {
+  flex: 1 1 0;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 9px;
+  color: #687995;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.leaderboard-tab:hover {
+  color: #2459d3;
+}
+
+.leaderboard-tab--active {
+  color: #2459d3;
+  background: #ffffff;
+  box-shadow: 0 6px 16px #20345c14;
+}
+
+/* Hạng của chính mình */
+
+.my-rank-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin: 4px 0 20px;
+  padding: 20px 24px;
+  border: 1px solid #dbe4fb;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #f7f9ff 0%, #eef3ff 100%);
+}
+
+.my-rank-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.my-rank-label {
+  color: #687995;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+}
+
+.my-rank-value {
+  color: #2459d3;
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.my-rank-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.my-rank-period {
+  color: #75829a;
+  font-size: 11px;
+}
+
+.my-rank-points {
+  color: #45536a;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.my-rank-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  color: #b54708;
+  background: #fef0c7;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+/* Danh sách xếp hạng */
+
+.leaderboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.leaderboard-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid #e7ebf3;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.leaderboard-item--top {
+  border-color: #f5d9a8;
+  background: #fffaf0;
+}
+
+.leaderboard-rank {
+  flex: 0 0 38px;
+  color: #8a96aa;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.leaderboard-item--top .leaderboard-rank {
+  color: #b54708;
+}
+
+.leaderboard-avatar {
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.leaderboard-avatar--text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2459d3;
+  background: #e7efff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.leaderboard-main {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.leaderboard-name {
+  color: #17243a;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.leaderboard-user-id {
+  color: #8a96aa;
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+
+.leaderboard-side {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.leaderboard-points {
+  padding: 5px 10px;
+  border-radius: 8px;
+  color: #027a48;
+  background: #d3f8df;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.leaderboard-badge {
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: #b54708;
+  background: #fef0c7;
+  font-size: 10px;
+  font-weight: 800;
+}
+

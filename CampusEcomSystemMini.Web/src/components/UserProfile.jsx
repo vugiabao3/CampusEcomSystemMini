@@ -1,4 +1,7 @@
 // Form hiển thị thông tin tài khoản 
+import MyPoints from "./gamification/MyPoints.jsx";
+import PointHistory from "./gamification/PointHistory.jsx";
+
 export default function UserProfile({
   user,
   onLogout,
@@ -7,8 +10,15 @@ export default function UserProfile({
   onOpenPreferences,
   onViewMyPosts,
   onOpenMatching,
+  onOpenLeaderboard,
   loading,
   error,
+  points,
+  pointsLoading,
+  pointsError,
+  history,
+  historyLoading,
+  historyError,
 }) {
   const fullName = user?.fullName ?? user?.FullName ?? "Sinh viên";
   const email = user?.email ?? user?.Email ?? "";
@@ -61,6 +71,20 @@ export default function UserProfile({
 
       <div className="profile-divider" />
 
+      <MyPoints
+        points={points}
+        loading={pointsLoading}
+        error={pointsError}
+      />
+
+      <PointHistory
+        history={history}
+        loading={historyLoading}
+        error={historyError}
+      />
+
+      <div className="profile-divider" />
+
       <div className="profile-actions">
         <button
           className="btn btn-primary"
@@ -105,6 +129,15 @@ export default function UserProfile({
           disabled={loading}
         >
           Smart Matching
+        </button>
+
+        <button
+          className="btn btn--ghost"
+          type="button"
+          onClick={onOpenLeaderboard}
+          disabled={loading}
+        >
+          Bảng xếp hạng
         </button>
       </div>
 
