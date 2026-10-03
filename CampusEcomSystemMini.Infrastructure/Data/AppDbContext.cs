@@ -29,6 +29,8 @@ public class AppDbContext : DbContext
 
     public DbSet<Document> Documents {get;set;}
 
+    public DbSet<DocumentReview> DocumentReviews {get;set;}
+
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
     {
@@ -168,6 +170,32 @@ entity.HasOne<Post>()
                 .WithMany()
                 .HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<DocumentReview>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            // Danh sách review lấy theo tài liệu,
+            // nên index DocumentId cho GET /api/library/documents/{id}/reviews.
+            entity.HasIndex(x => x.DocumentId);
+
+            // Mỗi người chỉ đánh giá một tài liệu đúng một lần.
+            entity.HasIndex(x => new { x.DocumentId, x.UserId })
+                .IsUnique();
+
+            entity.HasOne<Document>()
+                .WithMany()
+                .HasForeignKey(x => x.DocumentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // SQL Server không cho phép nhiều đường cascade
+            // (Users -> Documents -> DocumentReviews và Users -> DocumentReviews),
+            // nên review không cascade trực tiếp từ User.
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.NoAction);
         });
     }
 }

@@ -12,6 +12,10 @@ using CampusEcomSystemMini.Application.Library.Documents.DownloadDocument;
 using CampusEcomSystemMini.Application.Library.Documents.GetDocumentById;
 using CampusEcomSystemMini.Application.Library.Documents.GetDocuments;
 using CampusEcomSystemMini.Application.Library.Documents.GetMyDocuments;
+using CampusEcomSystemMini.Application.Library.Documents.Reviews.CreateReview;
+using CampusEcomSystemMini.Application.Library.Documents.Reviews.DeleteReview;
+using CampusEcomSystemMini.Application.Library.Documents.Reviews.GetReviews;
+using CampusEcomSystemMini.Application.Library.Documents.Reviews.UpdateReview;
 using CampusEcomSystemMini.Application.Library.Documents.UpdateDocument;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -348,6 +352,125 @@ public class LibraryController : ControllerBase
 
             // Không cho xóa tài liệu của người dùng khác.
             case DeleteDocumentOutcome.NotOwner:
+                return Forbid();
+
+            default:
+                return Ok(result.Response);
+        }
+    }
+
+    // =====================================================
+    // REVIEWS (MODULE 4 / BATCH 4)
+    // =====================================================
+
+    // POST /api/library/documents/{id}/reviews
+    //
+    // Người viết review lấy từ JWT,
+    // không nhận userId từ client.
+    [HttpPost("documents/{id:guid}/reviews")]
+    public async Task<ActionResult<CreateReviewResponse>> CreateReview(
+        Guid id,
+        CreateReviewCommand command,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(
+            command with { DocumentId = id },
+            cancellationToken);
+
+        switch (result.Outcome)
+        {
+            // Tài liệu không tồn tại.
+            case CreateReviewOutcome.NotFound:
+                return NotFound();
+
+            // Thiếu Rating hoặc Rating không nằm trong khoảng 1–5.
+            case CreateReviewOutcome.InvalidInput:
+                return BadRequest(result.ErrorMessage);
+
+            // Người dùng đã đánh giá tài liệu này rồi.
+            case CreateReviewOutcome.AlreadyReviewed:
+                return Conflict(result.ErrorMessage);
+
+            default:
+                return Created(
+                    $"/api/library/reviews/{result.Response!.ReviewId}",
+                    result.Response);
+        }
+    }
+
+    // GET /api/library/documents/{id}/reviews
+    //
+    // Chỉ trả thông tin hiển thị được,
+    // không trả PasswordHash hay dữ liệu nhạy cảm của User.
+    [HttpGet("documents/{id:guid}/reviews")]
+    public async Task<ActionResult<List<GetReviewsResponse>>> GetReviews(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(
+            new GetReviewsQuery(id),
+            cancellationToken);
+
+        if (result.Outcome == GetReviewsOutcome.NotFound)
+        {
+            return NotFound();
+        }
+
+        return Ok(result.Reviews);
+    }
+
+    // PUT /api/library/reviews/{reviewId}
+    //
+    // Chỉ người viết review được sửa.
+    [HttpPut("reviews/{reviewId:guid}")]
+    public async Task<ActionResult<UpdateReviewResponse>> UpdateReview(
+        Guid reviewId,
+        UpdateReviewCommand command,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(
+            command with { Id = reviewId },
+            cancellationToken);
+
+        switch (result.Outcome)
+        {
+            // Review không tồn tại.
+            case UpdateReviewOutcome.NotFound:
+                return NotFound();
+
+            // Không cho sửa review của người dùng khác.
+            case UpdateReviewOutcome.NotOwner:
+                return Forbid();
+
+            // Thiếu Rating hoặc Rating không nằm trong khoảng 1–5.
+            case UpdateReviewOutcome.InvalidInput:
+                return BadRequest(result.ErrorMessage);
+
+            default:
+                return Ok(result.Response);
+        }
+    }
+
+    // DELETE /api/library/reviews/{reviewId}
+    //
+    // Chỉ người viết review được xóa.
+    [HttpDelete("reviews/{reviewId:guid}")]
+    public async Task<ActionResult<DeleteReviewResponse>> DeleteReview(
+        Guid reviewId,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(
+            new DeleteReviewCommand(reviewId),
+            cancellationToken);
+
+        switch (result.Outcome)
+        {
+            // Review không tồn tại.
+            case DeleteReviewOutcome.NotFound:
+                return NotFound();
+
+            // Không cho xóa review của người dùng khác.
+            case DeleteReviewOutcome.NotOwner:
                 return Forbid();
 
             default:

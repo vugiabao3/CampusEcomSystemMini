@@ -704,6 +704,275 @@
 }
 
 
+/* =====================================================
+   ĐÁNH GIÁ TÀI LIỆU — MODULE 4 / BATCH 4
+   ===================================================== */
+
+/* Dải sao 1–5, dùng chung cho Card, Detail và Form */
+.review-stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  color: #dfe6f2;
+  font-size: 13px;
+  line-height: 1;
+  letter-spacing: 1px;
+}
+
+.review-stars--small {
+  font-size: 11px;
+}
+
+.review-star--active {
+  color: #f5a524;
+}
+
+/* Ô điểm đánh giá trong phần thông tin tài liệu */
+.doc-detail-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Khối đánh giá trong modal chi tiết */
+.doc-reviews {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-top: 18px;
+  border-top: 1px solid #edf0f6;
+}
+
+.doc-reviews-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.doc-reviews-title {
+  color: #17243a;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+}
+
+.doc-reviews-count {
+  padding: 4px 10px;
+  border-radius: 999px;
+  color: #2459d3;
+  background: #edf3ff;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.doc-reviews-note {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px dashed #dbe3f1;
+  border-radius: 10px;
+  color: #687995;
+  background: #fbfcff;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+/* Danh sách review */
+.review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.review-item {
+  padding: 12px 14px;
+  border: 1px solid #edf0f6;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.review-item--mine {
+  border-color: #dbe6fb;
+  background: #f8faff;
+}
+
+.review-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.review-item-author {
+  color: #17243a;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.review-item-time {
+  margin: 3px 0 0;
+  color: #94a0b4;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.review-item-comment {
+  margin: 8px 0 0;
+  color: #45536a;
+  font-size: 12px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.review-item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.review-item-actions .book-action {
+  padding: 6px 10px;
+  font-size: 10px;
+}
+
+/* Form viết / sửa đánh giá */
+.review-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 14px 16px;
+  border: 1px solid #e1eaf7;
+  border-radius: 14px;
+  background: #f7faff;
+}
+
+.review-item .review-form {
+  background: #ffffff;
+}
+
+.review-form-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.review-form-title {
+  color: #17243a;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.review-form-label {
+  display: block;
+  margin-bottom: 6px;
+  color: #94a0b4;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.review-form-rating {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.review-rating-input {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.review-rating-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 9px;
+  border: 1px solid #e1e6ef;
+  border-radius: 999px;
+  background: #ffffff;
+  font-family: inherit;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+
+.review-rating-option:hover {
+  border-color: #cfd8e8;
+  background: #f5f7fc;
+}
+
+.review-rating-option--active {
+  border-color: #4778e6;
+  background: #edf3ff;
+}
+
+.review-rating-option--active:hover {
+  background: #e2ebff;
+}
+
+.review-rating-option:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.review-rating-option-label {
+  color: #45536a;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.review-rating-current {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  color: #17243a;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.review-comment-input {
+  width: 100%;
+  padding: 11px 13px;
+  border: 1px solid #dce3ee;
+  border-radius: 11px;
+  outline: none;
+  color: #17243a;
+  background: #ffffff;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.6;
+  resize: vertical;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.review-comment-input:focus {
+  border-color: #4778e6;
+  box-shadow: 0 0 0 3px #4778e61a;
+}
+
+.review-comment-input::placeholder {
+  color: #94a0b4;
+}
+
+.review-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+
 @media (max-width: 850px) {
   .book-list,
   .book-match-list,
@@ -732,5 +1001,9 @@
   .book-card-swap-arrow {
     justify-content: center;
     transform: rotate(90deg);
+  }
+
+  .review-rating-current {
+    margin-left: 0;
   }
 }

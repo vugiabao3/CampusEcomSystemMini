@@ -75,6 +75,11 @@ public static class DependencyInjection
             IDocumentWatermarkService,
             DocumentWatermarkService>();
 
+        // Reviews (Module 4 / BATCH 4)
+        services.AddScoped<
+            IDocumentReviewRepository,
+            DocumentReviewRepository>();
+
         // Hệ thống điểm thuộc Module 6,
         // Module 4 chỉ dùng abstraction này cho tài liệu trả phí.
         services.AddScoped<
