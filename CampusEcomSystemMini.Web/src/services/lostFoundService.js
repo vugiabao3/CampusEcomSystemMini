@@ -44,3 +44,24 @@ export async function getLostFoundMap() {
     method: "GET",
   });
 }
+
+// API: POST /api/lost-found/{postId}/secret-question
+// Người nhặt đồ (chủ bài đăng Found) tạo câu hỏi + câu trả lời.
+// Câu trả lời được hash ở Backend và không được trả về.
+export async function createSecretQuestion(postId, { question, answer }) {
+  return request(`/api/lost-found/${postId}/secret-question`, {
+    method: "POST",
+    body: JSON.stringify({
+      question,
+      answer,
+    }),
+  });
+}
+
+// API: GET /api/lost-found/{postId}/secret-question
+// Chỉ trả về câu hỏi, không có câu trả lời.
+export async function getSecretQuestion(postId) {
+  return request(`/api/lost-found/${postId}/secret-question`, {
+    method: "GET",
+  });
+}

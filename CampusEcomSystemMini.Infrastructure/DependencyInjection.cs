@@ -43,6 +43,10 @@ public static class DependencyInjection
             LostFoundRepository>();
 
         services.AddScoped<
+            ISecretQuestionRepository,
+            SecretQuestionRepository>();
+
+        services.AddScoped<
             IPasswordHasher,
             PasswordHasher>();
 

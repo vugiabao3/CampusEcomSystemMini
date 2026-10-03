@@ -113,6 +113,47 @@
   background: #d3f8df;
 }
 
+.lost-card .match-card-action {
+  align-self: flex-start;
+  margin-top: 16px;
+}
+
+.lost-note {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  color: #687995;
+  background: #f4f6fb;
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.lost-question-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid #e7ebf3;
+  border-radius: 14px;
+  background: #fbfcff;
+}
+
+.lost-question-label {
+  color: #94a0b4;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.lost-question-text {
+  margin: 0;
+  color: #17243a;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
 
 /* =====================================================
    CAMPUS MAP

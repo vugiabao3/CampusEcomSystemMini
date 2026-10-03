@@ -1,6 +1,8 @@
 import LostFoundFilter from "./LostFoundFilter.jsx";
 import LostFoundList from "./LostFoundList.jsx";
 import LostFoundMap from "./LostFoundMap.jsx";
+import SecretQuestionForm from "./SecretQuestionForm.jsx";
+import SecretQuestionView from "./SecretQuestionView.jsx";
 
 // Trang Campus Lost & Found.
 // filter = "" | "Lost" | "Found" | "Returned"
@@ -17,8 +19,20 @@ export default function LostFoundPage({
   pins,
   mapLoading,
   mapError,
+  user,
+  secretItem,
+  secretMode,
+  secretQuestion,
+  secretLoading,
+  secretSaving,
+  secretError,
+  onOpenSecretQuestion,
+  onCloseSecretQuestion,
+  onSubmitSecretQuestion,
   onBack,
 }) {
+  const currentUserId = user?.id ?? user?.Id ?? "";
+
   return (
     <section className="pref-card posts-card lost-page">
       <div className="pref-heading">
@@ -61,6 +75,8 @@ export default function LostFoundPage({
         items={items}
         loading={loading}
         error={error}
+        currentUserId={currentUserId}
+        onOpenSecretQuestion={onOpenSecretQuestion}
       />
 
       <div className="lost-map-section">
@@ -74,6 +90,26 @@ export default function LostFoundPage({
           error={mapError}
         />
       </div>
+
+      {secretMode === "create" && (
+        <SecretQuestionForm
+          item={secretItem}
+          saving={secretSaving}
+          error={secretError}
+          onSubmit={onSubmitSecretQuestion}
+          onClose={onCloseSecretQuestion}
+        />
+      )}
+
+      {secretMode === "view" && (
+        <SecretQuestionView
+          item={secretItem}
+          question={secretQuestion}
+          loading={secretLoading}
+          error={secretError}
+          onClose={onCloseSecretQuestion}
+        />
+      )}
     </section>
   );
 }

@@ -21,6 +21,8 @@ public class AppDbContext : DbContext
 
     public DbSet<LostFoundRecord> LostFoundRecords {get;set;}
 
+    public DbSet<SecretQuestion> SecretQuestions {get;set;}
+
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
     {
@@ -81,6 +83,19 @@ entity.HasOne<Post>()
             entity.HasKey(x => x.Id);
 
             // Mỗi bài đăng Lost / Found chỉ có một bản ghi Lost & Found.
+            entity.HasIndex(x => x.PostId).IsUnique();
+
+            entity.HasOne<Post>()
+                .WithMany()
+                .HasForeignKey(x => x.PostId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<SecretQuestion>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            // Mỗi bài đăng Found chỉ có một câu hỏi bí mật.
             entity.HasIndex(x => x.PostId).IsUnique();
 
             entity.HasOne<Post>()

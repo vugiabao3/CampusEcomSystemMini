@@ -36,7 +36,11 @@ function formatCoordinate(value) {
 
 // Một tin Lost & Found trong danh sách.
 // Toàn bộ dữ liệu do Backend trả về, frontend chỉ hiển thị.
-export default function LostFoundCard({ item }) {
+export default function LostFoundCard({
+  item,
+  currentUserId,
+  onOpenSecretQuestion,
+}) {
   const title = item?.title ?? "";
   const description = item?.description ?? "";
   const fullName = item?.fullName ?? "";
@@ -45,6 +49,14 @@ export default function LostFoundCard({ item }) {
   const lat = formatCoordinate(item?.lat);
 
   const lng = formatCoordinate(item?.lng);
+
+  // Câu hỏi bí mật chỉ dành cho bài đăng Found.
+  const isFound = item?.type === "Found";
+
+  const isOwner =
+    Boolean(currentUserId) &&
+    String(item?.userId ?? "").toLowerCase() ===
+      String(currentUserId).toLowerCase();
 
   return (
     <article className="lost-card">
@@ -93,6 +105,18 @@ export default function LostFoundCard({ item }) {
           </span>
         </span>
       </div>
+
+      {isFound && (
+        <button
+          className="match-card-action"
+          type="button"
+          onClick={() => onOpenSecretQuestion(item)}
+        >
+          {isOwner
+            ? "Tạo câu hỏi bí mật"
+            : "Xem câu hỏi bí mật"}
+        </button>
+      )}
     </article>
   );
 }

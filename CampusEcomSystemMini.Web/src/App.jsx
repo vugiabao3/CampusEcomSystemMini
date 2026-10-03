@@ -59,6 +59,8 @@ import {
 import {
   getLostFoundPosts,
   getLostFoundMap,
+  createSecretQuestion,
+  getSecretQuestion,
 } from "./services/lostFoundService";
 
 import "./styles/auth.css";
@@ -185,6 +187,20 @@ export default function App() {
   const [lostFoundMapLoading, setLostFoundMapLoading] = useState(false);
 
   const [lostFoundMapError, setLostFoundMapError] = useState("");
+
+  // Câu hỏi bí mật: "create" (chủ bài đăng Found)
+  // hoặc "view" (người bị mất đồ xem câu hỏi).
+  const [secretMode, setSecretMode] = useState(null);
+
+  const [secretItem, setSecretItem] = useState(null);
+
+  const [secretQuestion, setSecretQuestion] = useState("");
+
+  const [secretLoading, setSecretLoading] = useState(false);
+
+  const [secretSaving, setSecretSaving] = useState(false);
+
+  const [secretError, setSecretError] = useState("");
 
 
   // =====================================================
@@ -1582,6 +1598,140 @@ export default function App() {
 
 
   // =====================================================
+  // CÂU HỎI BÍ MẬT (MODULE 3 / BATCH 2)
+  // =====================================================
+
+  function closeSecretQuestion() {
+
+    setSecretMode(null);
+
+    setSecretItem(null);
+
+    setSecretQuestion("");
+
+    setSecretError("");
+
+    setSecretLoading(false);
+
+    setSecretSaving(false);
+
+  }
+
+
+  // Chủ bài đăng Found tạo câu hỏi, người khác chỉ xem câu hỏi.
+  async function handleOpenSecretQuestion(item) {
+
+    setSecretItem(item);
+
+    setSecretQuestion("");
+
+    setSecretError("");
+
+    const currentUserId = user?.id ?? user?.Id ?? "";
+
+    const isOwner =
+      Boolean(currentUserId) &&
+      String(item?.userId ?? "").toLowerCase() ===
+        String(currentUserId).toLowerCase();
+
+    if (isOwner) {
+
+      setSecretMode("create");
+
+      return;
+
+    }
+
+    setSecretMode("view");
+
+    setSecretLoading(true);
+
+    try {
+
+      // GET /api/lost-found/{postId}/secret-question
+      const data = await getSecretQuestion(item.postId);
+
+      setSecretQuestion(data?.question ?? "");
+
+    } catch (error) {
+
+      console.error(
+
+        "Fetch secret question failed:",
+
+        error
+
+      );
+
+      setSecretError(
+
+        error.status === 404
+          ? "Người nhặt đồ chưa tạo câu hỏi bí mật."
+          : error.message ||
+            "Không thể tải câu hỏi bí mật."
+
+      );
+
+    } finally {
+
+      setSecretLoading(false);
+
+    }
+
+  }
+
+
+  async function handleSubmitSecretQuestion({ question, answer }) {
+
+    setSecretSaving(true);
+
+    setSecretError("");
+
+    try {
+
+      // POST /api/lost-found/{postId}/secret-question
+      await createSecretQuestion(secretItem.postId, {
+        question,
+        answer,
+      });
+
+      closeSecretQuestion();
+
+    } catch (error) {
+
+      console.error(
+
+        "Create secret question failed:",
+
+        error
+
+      );
+
+      setSecretError(getSecretQuestionErrorMessage(error));
+
+    } finally {
+
+      setSecretSaving(false);
+
+    }
+
+  }
+
+
+  function getSecretQuestionErrorMessage(error) {
+    if (error.status === 409) {
+      return "Câu hỏi bí mật của bài đăng này đã tồn tại.";
+    }
+
+    if (error.status === 403) {
+      return "Bạn không phải chủ bài đăng này.";
+    }
+
+    return error.message || "Không thể lưu câu hỏi bí mật.";
+  }
+
+
+  // =====================================================
   // RENDER
   // =====================================================
 
@@ -1946,6 +2096,16 @@ onEditPreferences={showPreferences}
                pins={lostFoundPins}
                mapLoading={lostFoundMapLoading}
                mapError={lostFoundMapError}
+               user={user}
+               secretItem={secretItem}
+               secretMode={secretMode}
+               secretQuestion={secretQuestion}
+               secretLoading={secretLoading}
+               secretSaving={secretSaving}
+               secretError={secretError}
+               onOpenSecretQuestion={handleOpenSecretQuestion}
+               onCloseSecretQuestion={closeSecretQuestion}
+               onSubmitSecretQuestion={handleSubmitSecretQuestion}
                onBack={showProfile}
              />
 
