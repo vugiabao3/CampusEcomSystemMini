@@ -85,6 +85,10 @@ import {
   deleteDocument,
   downloadDocument,
   saveDownloadedFile,
+  getDocumentReviews,
+  createDocumentReview,
+  updateDocumentReview,
+  deleteDocumentReview,
 } from "./services/libraryService";
 
 import "./styles/auth.css";
@@ -341,6 +345,35 @@ export default function App() {
 
   const [documentDownloadSuccess, setDocumentDownloadSuccess] =
     useState("");
+
+  // =====================================================
+  // ĐÁNH GIÁ TÀI LIỆU — MODULE 4 / BATCH 4
+  // =====================================================
+
+  // Đánh giá của tài liệu đang mở chi tiết.
+  const [documentReviews, setDocumentReviews] = useState([]);
+
+  const [documentReviewsLoading, setDocumentReviewsLoading] =
+    useState(false);
+
+  const [documentReviewsError, setDocumentReviewsError] = useState("");
+
+  const [documentReviewsSaving, setDocumentReviewsSaving] =
+    useState(false);
+
+  const [documentReviewsSuccess, setDocumentReviewsSuccess] =
+    useState("");
+
+  const [documentReviewFormError, setDocumentReviewFormError] =
+    useState("");
+
+  // Review đang sửa, null = không sửa review nào.
+  const [editingDocumentReviewId, setEditingDocumentReviewId] =
+    useState(null);
+
+  // Review đang xóa, dùng để disable đúng nút xóa.
+  const [deletingDocumentReviewId, setDeletingDocumentReviewId] =
+    useState(null);
 
 
   // =====================================================
@@ -2945,12 +2978,17 @@ export default function App() {
 
     setDocumentFormOpen(false);
 
+    resetDocumentReviews();
+
     try {
 
       // GET /api/library/documents/{id}
       const data = await getDocumentById(documentId);
 
       setDocumentDetail(data);
+
+      // GET /api/library/documents/{id}/reviews
+      await fetchDocumentReviews(documentId);
 
     } catch (error) {
 
@@ -2982,6 +3020,8 @@ export default function App() {
     setDocumentDownloadError("");
 
     setDocumentDownloadSuccess("");
+
+    resetDocumentReviews();
 
   }
 
@@ -3064,6 +3104,320 @@ export default function App() {
       error.message ||
       "Tải tài liệu thất bại, vui lòng thử lại."
     );
+
+  }
+
+
+  // =====================================================
+  // ĐÁNH GIÁ TÀI LIỆU (MODULE 4 / BATCH 4)
+  // =====================================================
+
+  // GET /api/library/documents/{id}/reviews
+  async function fetchDocumentReviews(documentId) {
+
+    if (!documentId) {
+      return;
+    }
+
+    setDocumentReviewsLoading(true);
+
+    setDocumentReviewsError("");
+
+    try {
+
+      const data = await getDocumentReviews(documentId);
+
+      setDocumentReviews(data);
+
+    } catch (error) {
+
+      console.error("Fetch document reviews failed:", error);
+
+      setDocumentReviews([]);
+
+      setDocumentReviewsError(
+        getDocumentReviewErrorMessage(error)
+      );
+
+    } finally {
+
+      setDocumentReviewsLoading(false);
+
+    }
+
+  }
+
+
+  // Xóa trạng thái đánh giá khi đóng hoặc đổi tài liệu đang xem.
+  function resetDocumentReviews() {
+
+    setDocumentReviews([]);
+
+    setDocumentReviewsError("");
+
+    setDocumentReviewsSuccess("");
+
+    setDocumentReviewFormError("");
+
+    setEditingDocumentReviewId(null);
+
+    setDeletingDocumentReviewId(null);
+
+  }
+
+
+  function getDocumentReviewErrorMessage(error) {
+
+    if (error.status === 403) {
+      return "Bạn không phải người viết đánh giá này.";
+    }
+
+    if (error.status === 404) {
+      return "Không tìm thấy tài liệu hoặc đánh giá.";
+    }
+
+    // Backend trả về nguyên nhân cụ thể khi điểm không hợp lệ.
+    if (error.status === 400) {
+      return (
+        error.message ||
+        "Điểm đánh giá phải nằm trong khoảng 1 đến 5."
+      );
+    }
+
+    // Mỗi người chỉ đánh giá một tài liệu đúng một lần.
+    if (error.status === 409) {
+      return (
+        error.message ||
+        "Bạn đã đánh giá tài liệu này rồi, hãy sửa đánh giá của bạn."
+      );
+    }
+
+    return error.message || "Thao tác với đánh giá thất bại.";
+
+  }
+
+
+  // Backend trả kèm điểm trung bình và số đánh giá mới
+  // sau khi tạo / sửa review.
+  function applyDocumentRatingSummary(rating, reviewCount) {
+
+    setDocumentDetail((previous) =>
+      previous
+        ? {
+            ...previous,
+            rating: Number(rating ?? 0),
+            reviewCount: Number(reviewCount ?? 0),
+          }
+        : previous
+    );
+
+  }
+
+
+  // Xóa review chỉ trả message nên tải lại chi tiết tài liệu
+  // để cập nhật điểm trung bình và số đánh giá.
+  async function refreshDocumentRatingSummary(documentId) {
+
+    if (!documentId) {
+      return;
+    }
+
+    try {
+
+      const data = await getDocumentById(documentId);
+
+      setDocumentDetail((previous) =>
+        previous?.id === data?.id ? data : previous
+      );
+
+    } catch (error) {
+
+      console.error(
+        "Refresh document rating failed:",
+        error
+      );
+
+    }
+
+  }
+
+
+  function handleEditDocumentReview(review) {
+
+    setEditingDocumentReviewId(review?.id ?? null);
+
+    setDocumentReviewsSuccess("");
+
+    setDocumentReviewFormError("");
+
+  }
+
+
+  function handleCancelEditDocumentReview() {
+
+    setEditingDocumentReviewId(null);
+
+    setDocumentReviewFormError("");
+
+  }
+
+
+  // POST /api/library/documents/{id}/reviews
+  async function handleSubmitDocumentReview(formData) {
+
+    const documentId = documentDetail?.id;
+
+    if (!documentId) {
+      return;
+    }
+
+    setDocumentReviewsSaving(true);
+
+    setDocumentReviewsSuccess("");
+
+    setDocumentReviewFormError("");
+
+    try {
+
+      const data = await createDocumentReview(
+        documentId,
+        formData
+      );
+
+      setDocumentReviewsSuccess(
+        "Đã ghi nhận đánh giá của bạn."
+      );
+
+      applyDocumentRatingSummary(
+        data?.documentRating,
+        data?.documentReviewCount
+      );
+
+      await fetchDocumentReviews(documentId);
+
+    } catch (error) {
+
+      console.error("Create document review failed:", error);
+
+      setDocumentReviewFormError(
+        getDocumentReviewErrorMessage(error)
+      );
+
+    } finally {
+
+      setDocumentReviewsSaving(false);
+
+    }
+
+  }
+
+
+  // PUT /api/library/reviews/{reviewId}
+  async function handleSubmitEditDocumentReview(formData) {
+
+    const reviewId = editingDocumentReviewId;
+
+    const documentId = documentDetail?.id;
+
+    if (!reviewId || !documentId) {
+      return;
+    }
+
+    setDocumentReviewsSaving(true);
+
+    setDocumentReviewsSuccess("");
+
+    setDocumentReviewFormError("");
+
+    try {
+
+      const data = await updateDocumentReview(
+        reviewId,
+        formData
+      );
+
+      setEditingDocumentReviewId(null);
+
+      setDocumentReviewsSuccess(
+        "Đánh giá của bạn đã được cập nhật."
+      );
+
+      applyDocumentRatingSummary(
+        data?.documentRating,
+        data?.documentReviewCount
+      );
+
+      await fetchDocumentReviews(documentId);
+
+    } catch (error) {
+
+      console.error("Update document review failed:", error);
+
+      setDocumentReviewFormError(
+        getDocumentReviewErrorMessage(error)
+      );
+
+    } finally {
+
+      setDocumentReviewsSaving(false);
+
+    }
+
+  }
+
+
+  // DELETE /api/library/reviews/{reviewId}
+  async function handleDeleteDocumentReview(review) {
+
+    if (!review?.id) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Xóa đánh giá của bạn? Hành động không thể hoàn tác."
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    const documentId = documentDetail?.id;
+
+    setDeletingDocumentReviewId(review.id);
+
+    setDocumentReviewsSuccess("");
+
+    setDocumentReviewFormError("");
+
+    try {
+
+      await deleteDocumentReview(review.id);
+
+      if (editingDocumentReviewId === review.id) {
+
+        setEditingDocumentReviewId(null);
+
+      }
+
+      setDocumentReviewsSuccess("Đánh giá đã được xóa.");
+
+      await refreshDocumentRatingSummary(documentId);
+
+      await fetchDocumentReviews(documentId);
+
+    } catch (error) {
+
+      console.error("Delete document review failed:", error);
+
+      setDocumentReviewFormError(
+        getDocumentReviewErrorMessage(error)
+      );
+
+    } finally {
+
+      setDeletingDocumentReviewId(null);
+
+    }
 
   }
 
@@ -3592,6 +3946,19 @@ claimsItem={claimsItem}
                   downloadingId: downloadingDocumentId,
                   downloadError: documentDownloadError,
                   downloadSuccess: documentDownloadSuccess,
+                  reviews: documentReviews,
+                  reviewsLoading: documentReviewsLoading,
+                  reviewsError: documentReviewsError,
+                  reviewsSaving: documentReviewsSaving,
+                  reviewsSuccess: documentReviewsSuccess,
+                  reviewFormError: documentReviewFormError,
+                  editingReviewId: editingDocumentReviewId,
+                  deletingReviewId: deletingDocumentReviewId,
+                  onEditReview: handleEditDocumentReview,
+                  onCancelEditReview: handleCancelEditDocumentReview,
+                  onDeleteReview: handleDeleteDocumentReview,
+                  onSubmitReview: handleSubmitDocumentReview,
+                  onSubmitEditReview: handleSubmitEditDocumentReview,
                 }}
               />
 

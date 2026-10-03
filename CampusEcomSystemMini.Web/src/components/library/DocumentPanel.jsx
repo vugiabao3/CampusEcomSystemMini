@@ -3,7 +3,7 @@ import DocumentFilter from "./DocumentFilter.jsx";
 import DocumentForm from "./DocumentForm.jsx";
 import DocumentList from "./DocumentList.jsx";
 
-// Tài liệu số — MODULE 4 / BATCH 2 + BATCH 3.
+// Tài liệu số — MODULE 4 / BATCH 2 + BATCH 3 + BATCH 4.
 //
 // Tài liệu miễn phí / tài liệu trả phí
 //   ↓
@@ -14,6 +14,10 @@ import DocumentList from "./DocumentList.jsx";
 // PUT  /api/library/documents/{id}    (chỉ sửa metadata)
 // DELETE /api/library/documents/{id}
 // GET  /api/library/documents/{id}/download  (file đã có watermark)
+// GET  /api/library/documents/{id}/reviews    (đánh giá)
+// POST /api/library/documents/{id}/reviews    (tạo đánh giá)
+// PUT  /api/library/reviews/{reviewId}         (sửa đánh giá của mình)
+// DELETE /api/library/reviews/{reviewId}       (xóa đánh giá của mình)
 export default function DocumentPanel({
   mode,
   onChangeMode,
@@ -41,6 +45,19 @@ export default function DocumentPanel({
   downloadingId,
   downloadError,
   downloadSuccess,
+  reviews,
+  reviewsLoading,
+  reviewsError,
+  reviewsSaving,
+  reviewsSuccess,
+  reviewFormError,
+  editingReviewId,
+  deletingReviewId,
+  onEditReview,
+  onCancelEditReview,
+  onDeleteReview,
+  onSubmitReview,
+  onSubmitEditReview,
 }) {
   const currentUserId = user?.id ?? user?.Id ?? "";
 
@@ -141,6 +158,20 @@ export default function DocumentPanel({
           downloading={downloadingId === detail?.id}
           downloadError={downloadError}
           downloadSuccess={downloadSuccess}
+          reviews={reviews}
+          reviewsLoading={reviewsLoading}
+          reviewsError={reviewsError}
+          reviewsSaving={reviewsSaving}
+          reviewsSuccess={reviewsSuccess}
+          reviewFormError={reviewFormError}
+          currentUserId={currentUserId}
+          editingReviewId={editingReviewId}
+          deletingReviewId={deletingReviewId}
+          onEditReview={onEditReview}
+          onCancelEditReview={onCancelEditReview}
+          onDeleteReview={onDeleteReview}
+          onSubmitReview={onSubmitReview}
+          onSubmitEditReview={onSubmitEditReview}
           onEdit={onEdit}
           onDelete={onDelete}
           onDownload={onDownload}

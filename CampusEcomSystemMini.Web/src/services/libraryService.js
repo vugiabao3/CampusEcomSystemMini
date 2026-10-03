@@ -2,6 +2,7 @@
 // Batch 1: sàn đổi sách.
 // Batch 2: tài liệu số.
 // Batch 3: tải tài liệu + watermark.
+// Batch 4: đánh giá tài liệu.
 import { request, requestBlob } from "./authService.js";
 
 // Giới hạn file tài liệu theo workflow Upload tài liệu.
@@ -280,4 +281,60 @@ export function saveDownloadedFile({ blob, fileName }, fallbackName) {
 
   // Nhả object URL sau khi trình duyệt bắt đầu tải file.
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+
+// =====================================================
+// ĐÁNH GIÁ TÀI LIỆU — MODULE 4 / BATCH 4
+// =====================================================
+
+// Rating do Backend quy định nằm trong khoảng 1–5.
+export const DOCUMENT_REVIEW_RATINGS = [1, 2, 3, 4, 5];
+
+// API: GET /api/library/documents/{id}/reviews
+// Danh sách đánh giá của một tài liệu, mới nhất trước.
+export async function getDocumentReviews(documentId) {
+  return request(`/api/library/documents/${documentId}/reviews`, {
+    method: "GET",
+  });
+}
+
+// API: POST /api/library/documents/{id}/reviews
+// Người viết review lấy từ JWT nên không gửi userId.
+// Mỗi người chỉ đánh giá một tài liệu đúng một lần,
+// đánh giá rồi thì sửa qua updateDocumentReview.
+export async function createDocumentReview(
+  documentId,
+  { rating, comment }
+) {
+  return request(`/api/library/documents/${documentId}/reviews`, {
+    method: "POST",
+    body: JSON.stringify({
+      rating: Number(rating),
+      comment: comment || null,
+    }),
+  });
+}
+
+// API: PUT /api/library/reviews/{reviewId}
+// Chỉ người viết review được sửa.
+export async function updateDocumentReview(
+  reviewId,
+  { rating, comment }
+) {
+  return request(`/api/library/reviews/${reviewId}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      rating: Number(rating),
+      comment: comment || null,
+    }),
+  });
+}
+
+// API: DELETE /api/library/reviews/{reviewId}
+// Chỉ người viết review được xóa.
+export async function deleteDocumentReview(reviewId) {
+  return request(`/api/library/reviews/${reviewId}`, {
+    method: "DELETE",
+  });
 }

@@ -1,3 +1,7 @@
+import RatingStars from "./RatingStars.jsx";
+import ReviewForm from "./ReviewForm.jsx";
+import ReviewList from "./ReviewList.jsx";
+
 import {
   formatBookDate,
   formatFileSize,
@@ -17,6 +21,12 @@ import {
 // Nút tải gọi GET /api/library/documents/{id}/download.
 // File tải về đã được Backend đóng dấu watermark,
 // nên frontend không xử lý watermark.
+//
+// Khu vực đánh giá dùng:
+//   GET    /api/library/documents/{id}/reviews
+//   POST   /api/library/documents/{id}/reviews
+//   PUT    /api/library/reviews/{reviewId}
+//   DELETE /api/library/reviews/{reviewId}
 export default function DocumentDetail({
   document,
   loading,
@@ -25,11 +35,34 @@ export default function DocumentDetail({
   downloading,
   downloadError,
   downloadSuccess,
+  reviews,
+  reviewsLoading,
+  reviewsError,
+  reviewsSaving,
+  reviewsSuccess,
+  reviewFormError,
+  currentUserId,
+  editingReviewId,
+  deletingReviewId,
+  onEditReview,
+  onCancelEditReview,
+  onDeleteReview,
+  onSubmitReview,
+  onSubmitEditReview,
   onEdit,
   onDelete,
   onDownload,
   onClose,
 }) {
+  // Mỗi người chỉ đánh giá một tài liệu đúng một lần,
+  // nên đã có review của mình thì chỉ sửa chứ không tạo mới.
+  const myReview = (reviews ?? []).find(
+    (review) =>
+      Boolean(currentUserId) &&
+      String(review?.userId ?? "").toLowerCase() ===
+        String(currentUserId).toLowerCase()
+  );
+
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div
@@ -140,11 +173,18 @@ export default function DocumentDetail({
                   Đánh giá
                 </span>
 
-                <span className="doc-detail-meta-value">
-                  {getRatingLabel(
-                    document.rating,
-                    document.reviewCount
-                  )}
+                <span className="doc-detail-meta-value doc-detail-rating">
+                  <RatingStars
+                    rating={document.rating}
+                    size="small"
+                  />
+
+                  <span>
+                    {getRatingLabel(
+                      document.rating,
+                      document.reviewCount
+                    )}
+                  </span>
                 </span>
               </span>
             </div>
@@ -166,6 +206,54 @@ export default function DocumentDetail({
                   {formatBookDate(document.updatedAt)}
                 </p>
               )}
+
+            <div className="doc-reviews">
+              <div className="doc-reviews-head">
+                <span className="doc-reviews-title">
+                  Đánh giá tài liệu
+                </span>
+
+                <span className="doc-reviews-count">
+                  {reviews?.length ?? 0} đánh giá
+                </span>
+              </div>
+
+              {reviewsSuccess && (
+                <div className="message message-success" role="status">
+                  {reviewsSuccess}
+                </div>
+              )}
+
+              <ReviewList
+                reviews={reviews}
+                loading={reviewsLoading}
+                error={reviewsError}
+                currentUserId={currentUserId}
+                editingReviewId={editingReviewId}
+                saving={reviewsSaving}
+                deletingReviewId={deletingReviewId}
+                formError={reviewFormError}
+                onEdit={onEditReview}
+                onCancelEdit={onCancelEditReview}
+                onDelete={onDeleteReview}
+                onSubmitEdit={onSubmitEditReview}
+              />
+
+              {!editingReviewId &&
+                (myReview ? (
+                  <p className="doc-reviews-note">
+                    Bạn đã đánh giá tài liệu này. Dùng nút “Sửa”
+                    trong danh sách để thay đổi.
+                  </p>
+                ) : (
+                  <ReviewForm
+                    review={null}
+                    saving={reviewsSaving}
+                    error={reviewFormError}
+                    onSubmit={onSubmitReview}
+                  />
+                ))}
+            </div>
 
             <div className="doc-download">
               <div className="doc-download-main">
