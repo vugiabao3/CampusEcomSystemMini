@@ -1,0 +1,428 @@
+/* =====================================================
+   SÀN ĐỔI SÁCH — MODULE 4 / BATCH 1
+   Dùng chung token màu / typography với auth.css, posts.css
+   ===================================================== */
+
+.library-page {
+  width: 100%;
+}
+
+.library-search {
+  flex: 1 1 260px;
+  max-width: 360px;
+  padding: 9px 13px;
+  border: 1px solid #dfe6f2;
+  border-radius: 999px;
+  outline: none;
+  color: #17243a;
+  background: #ffffff;
+  font-family: inherit;
+  font-size: 11px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.library-search:focus {
+  border-color: #4778e6;
+  box-shadow: 0 0 0 3px #4778e61a;
+}
+
+.library-search::placeholder {
+  color: #94a0b4;
+}
+
+
+/* =====================================================
+   DANH SÁCH BÀI ĐĂNG ĐỔI SÁCH
+   ===================================================== */
+
+.book-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.book-card {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  border: 1px solid #e7ebf3;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px #20345c0a;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.book-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 36px #20345c14;
+}
+
+.book-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.book-card-head-main {
+  min-width: 0;
+}
+
+.book-card-title {
+  margin: 0 0 5px;
+  color: #17243a;
+  font-size: 15px;
+  letter-spacing: -0.3px;
+  line-height: 1.5;
+}
+
+.book-card-author {
+  color: #8a96aa;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.book-status {
+  flex: 0 0 auto;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.book-status--open {
+  color: #175cd3;
+  background: #dbe8fd;
+}
+
+.book-status--closed {
+  color: #687995;
+  background: #f1f3f7;
+}
+
+.book-card-swap {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.book-card-swap-item {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #edf0f6;
+  border-radius: 10px;
+  background: #fbfcff;
+}
+
+.book-card-swap-label {
+  display: block;
+  margin-bottom: 2px;
+  color: #94a0b4;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.book-card-swap-value {
+  color: #17243a;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.book-card-swap-arrow {
+  display: flex;
+  align-items: center;
+  color: #4778e6;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.book-card-description {
+  margin: 14px 0 0;
+  color: #45536a;
+  font-size: 12px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.book-card-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.book-card-meta-item {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #edf0f6;
+  border-radius: 10px;
+}
+
+.book-card-meta-label {
+  display: block;
+  margin-bottom: 4px;
+  color: #94a0b4;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.book-card-meta-value {
+  display: block;
+  color: #17243a;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.book-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+.book-action {
+  padding: 8px 12px;
+  border: 1px solid #e1e6ef;
+  border-radius: 9px;
+  color: #45536a;
+  background: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  transition:
+    color 0.15s,
+    border-color 0.15s,
+    background 0.15s;
+}
+
+.book-action:hover {
+  border-color: #cfd8e8;
+  background: #f5f7fc;
+}
+
+.book-action--view {
+  border-color: transparent;
+  color: #2459d3;
+  background: #edf3ff;
+}
+
+.book-action--view:hover {
+  background: #e2ebff;
+}
+
+.book-action--delete {
+  color: #d94343;
+}
+
+.book-action--delete:hover {
+  border-color: #f3c4c4;
+  color: #bb3030;
+  background: #fff5f5;
+}
+
+
+/* =====================================================
+   CHI TIẾT BÀI ĐĂNG ĐỔI SÁCH
+   ===================================================== */
+
+.book-detail-swap {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.book-detail-swap-item {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid #edf0f6;
+  border-radius: 12px;
+  background: #fbfcff;
+}
+
+.book-detail-swap-value {
+  color: #17243a;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.book-detail-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.book-detail-meta-item {
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid #edf0f6;
+  border-radius: 12px;
+}
+
+.book-detail-meta-value {
+  display: block;
+  color: #17243a;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+/* =====================================================
+   EXCHANGE MATCH — CHUỖI ĐỔI SÁCH
+   ===================================================== */
+
+.book-match-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid #edf0f6;
+}
+
+.book-match-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.book-match {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid #e7ebf3;
+  border-left: 4px solid #4778e6;
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.book-match--cycle {
+  border-left-color: #7a5af8;
+}
+
+.book-match-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.book-match-head-main {
+  min-width: 0;
+}
+
+.book-match-type {
+  display: inline-block;
+  margin-bottom: 8px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.book-match-type--direct {
+  color: #175cd3;
+  background: #dbe8fd;
+}
+
+.book-match-type--cycle {
+  color: #6941c6;
+  background: #eee6ff;
+}
+
+.book-match-chain {
+  margin: 0;
+  color: #17243a;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.book-match-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.book-match-meta-item {
+  min-width: 0;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: #f7f9fd;
+}
+
+.book-match-meta-value {
+  display: block;
+  color: #17243a;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.book-match-time {
+  color: #94a0b4;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.library-page .book-match-section .posts-filter-label {
+  flex: none;
+}
+
+
+@media (max-width: 850px) {
+  .book-list,
+  .book-match-list,
+  .book-detail-meta,
+  .book-card-meta,
+  .book-match-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .library-search {
+    /* Ở mobile .posts-filter-group xuống dòng,
+       nên reset flex để chiều cao không theo flex-basis. */
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: none;
+  }
+
+  .book-card-swap,
+  .book-detail-swap {
+    flex-direction: column;
+  }
+
+  .book-card-swap-arrow {
+    justify-content: center;
+    transform: rotate(90deg);
+  }
+}

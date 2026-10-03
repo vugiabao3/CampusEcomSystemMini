@@ -25,6 +25,8 @@ public class AppDbContext : DbContext
 
     public DbSet<Claim> Claims {get;set;}
 
+    public DbSet<BookExchangePost> BookExchangePosts {get;set;}
+
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
     {
@@ -124,6 +126,22 @@ entity.HasOne<Post>()
                 .WithMany()
                 .HasForeignKey(x => x.ClaimantUserId)
                 .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<BookExchangePost>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            // Danh sách sàn đổi sách luôn lấy theo chủ bài đăng,
+            // nên index UserId cho truy vấn GET /api/library/books/me.
+            entity.HasIndex(x => x.UserId);
+
+            entity.HasIndex(x => x.Status);
+
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

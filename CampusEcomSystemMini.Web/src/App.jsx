@@ -14,6 +14,7 @@ import Preferences from "./components/Preferences";
 import PostsPage from "./components/PostsPage";
 import SmartMatching from "./components/SmartMatching";
 import LostFoundPage from "./components/LostFoundPage";
+import LibraryPage from "./components/library/LibraryPage";
 
 import {
   getMe,
@@ -68,11 +69,22 @@ import {
   markReturned,
 } from "./services/lostFoundService";
 
+import {
+  getBooks,
+  getMyBooks,
+  getBookById,
+  createBook,
+  updateBook,
+  deleteBook,
+  getExchangeMatches,
+} from "./services/libraryService";
+
 import "./styles/auth.css";
 import "./styles/preferences.css";
 import "./styles/posts.css";
 import "./styles/matching.css";
 import "./styles/lostFound.css";
+import "./styles/library.css";
 
 export default function App() {
 
@@ -227,9 +239,53 @@ export default function App() {
 
   const [claimsError, setClaimsError] = useState("");
 
+<<<<<<< Updated upstream
   // Yêu cầu đang được duyệt / từ chối, hoặc "returned"
   // khi chủ bài đăng xác nhận đã trả đồ.
   const [claimsActionId, setClaimsActionId] = useState(null);
+=======
+  // =====================================================
+  // KHO TÀI LIỆU & SÁCH — MODULE 4 / BATCH 1
+  // =====================================================
+
+  // "all" = GET /api/library/books, "mine" = GET /api/library/books/me
+  const [libraryMode, setLibraryMode] = useState("all");
+
+  const [books, setBooks] = useState([]);
+
+  const [booksLoading, setBooksLoading] = useState(false);
+
+  const [booksSaving, setBooksSaving] = useState(false);
+
+  const [booksError, setBooksError] = useState("");
+
+  const [booksSuccess, setBooksSuccess] = useState("");
+
+  // Bộ lọc GET /api/library/books?search=...&status=...
+  const [bookFilters, setBookFilters] = useState({
+    search: "",
+    status: "",
+  });
+
+  const [bookFormOpen, setBookFormOpen] = useState(false);
+
+  const [editingBook, setEditingBook] = useState(null);
+
+  const [bookDetailOpen, setBookDetailOpen] = useState(false);
+
+  const [bookDetail, setBookDetail] = useState(null);
+
+  const [bookDetailLoading, setBookDetailLoading] = useState(false);
+
+  const [bookDetailError, setBookDetailError] = useState("");
+
+  // Chuỗi đổi sách của người đang đăng nhập
+  const [bookMatches, setBookMatches] = useState([]);
+
+  const [bookMatchesLoading, setBookMatchesLoading] = useState(false);
+
+  const [bookMatchesError, setBookMatchesError] = useState("");
+>>>>>>> Stashed changes
 
 
   // =====================================================
@@ -2113,6 +2169,384 @@ export default function App() {
 
 
   // =====================================================
+  // KHO TÀI LIỆU & SÁCH (MODULE 4 / BATCH 1)
+  // =====================================================
+
+  async function fetchBooks(mode, filters) {
+
+    setBooksLoading(true);
+
+    setBooksError("");
+
+    const activeFilters = filters ?? bookFilters;
+
+    try {
+
+      // GET /api/library/books (có search/status)
+      // hoặc GET /api/library/books/me
+      const data =
+        mode === "mine"
+          ? await getMyBooks()
+          : await getBooks(activeFilters);
+
+      setBooks(data);
+
+    } catch (error) {
+
+      console.error(
+
+        "Fetch books failed:",
+
+        error
+
+      );
+
+      setBooks([]);
+
+      setBooksError(
+
+        error.message ||
+
+        "Không thể tải sàn đổi sách."
+
+      );
+
+    } finally {
+
+      setBooksLoading(false);
+
+    }
+
+  }
+
+
+  async function fetchBookMatches() {
+
+    setBookMatchesLoading(true);
+
+    setBookMatchesError("");
+
+    try {
+
+      // GET /api/library/books/exchange-matches
+      const data = await getExchangeMatches();
+
+      setBookMatches(data);
+
+    } catch (error) {
+
+      console.error(
+
+        "Fetch exchange matches failed:",
+
+        error
+
+      );
+
+      setBookMatches([]);
+
+      setBookMatchesError(
+
+        error.message ||
+
+        "Không thể tải chuỗi đổi sách."
+
+      );
+
+    } finally {
+
+      setBookMatchesLoading(false);
+
+    }
+
+  }
+
+
+  function showLibrary() {
+
+    setPage("library");
+
+    setError("");
+
+    setSuccess("");
+
+    setBooksSuccess("");
+
+    setBookFormOpen(false);
+
+    setBookDetailOpen(false);
+
+    fetchBooks(libraryMode);
+
+    fetchBookMatches();
+
+  }
+
+
+  // Chuyển giữa tất cả bài đăng và bài đăng của tôi.
+  function handleChangeLibraryMode(mode) {
+
+    const targetMode = mode || "all";
+
+    setLibraryMode(targetMode);
+
+    setBooksSuccess("");
+
+    setBookFormOpen(false);
+
+    setBookDetailOpen(false);
+
+    fetchBooks(targetMode);
+
+  }
+
+
+  // Bộ lọc chỉ áp dụng cho GET /api/library/books.
+  function handleBookFilterChange(nextFilters) {
+
+    const filters = {
+
+      search: nextFilters.search ?? "",
+
+      status: nextFilters.status ?? "",
+
+    };
+
+    setBookFilters(filters);
+
+    setBooksSuccess("");
+
+    if (libraryMode !== "all") {
+      return;
+    }
+
+    fetchBooks("all", filters);
+
+  }
+
+
+  function handleResetBookFilters() {
+
+    const filters = {
+
+      search: "",
+
+      status: "",
+
+    };
+
+    setBookFilters(filters);
+
+    setBooksSuccess("");
+
+    fetchBooks(libraryMode, filters);
+
+  }
+
+
+  function openBookForm(book) {
+
+    setEditingBook(book || null);
+
+    setBookFormOpen(true);
+
+    setBooksError("");
+
+    setBooksSuccess("");
+
+    setBookDetailOpen(false);
+
+  }
+
+
+  function closeBookForm() {
+
+    setBookFormOpen(false);
+
+    setEditingBook(null);
+
+  }
+
+
+  async function handleSubmitBook(formData) {
+
+    setBooksSaving(true);
+
+    setBooksError("");
+
+    setBooksSuccess("");
+
+    try {
+
+      if (editingBook) {
+
+        // PUT /api/library/books/{id}
+        await updateBook(editingBook.id, formData);
+
+        setBooksSuccess("Bài đổi sách đã được cập nhật.");
+
+      } else {
+
+        // POST /api/library/books
+        await createBook(formData);
+
+        setBooksSuccess("Bài đổi sách đã được đăng.");
+
+      }
+
+      closeBookForm();
+
+      await fetchBooks(libraryMode);
+
+      await fetchBookMatches();
+
+    } catch (error) {
+
+      console.error(
+
+        "Save book error:",
+
+        error
+
+      );
+
+      setBooksError(getBookErrorMessage(error));
+
+    } finally {
+
+      setBooksSaving(false);
+
+    }
+
+  }
+
+
+  async function handleDeleteBook(book) {
+
+    const confirmed = window.confirm(
+      "Xóa bài đổi sách này? Hành động không thể hoàn tác."
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setBooksSaving(true);
+
+    setBooksError("");
+
+    setBooksSuccess("");
+
+    try {
+
+      // DELETE /api/library/books/{id}
+      await deleteBook(book.id);
+
+      setBookDetailOpen(false);
+
+      setBooksSuccess("Bài đổi sách đã được xóa.");
+
+      await fetchBooks(libraryMode);
+
+      await fetchBookMatches();
+
+    } catch (error) {
+
+      console.error(
+
+        "Delete book error:",
+
+        error
+
+      );
+
+      setBooksError(getBookErrorMessage(error));
+
+    } finally {
+
+      setBooksSaving(false);
+
+    }
+
+  }
+
+
+  function getBookErrorMessage(error) {
+
+    if (error.status === 403) {
+      return "Bạn không phải chủ của bài đổi sách này.";
+    }
+
+    if (error.status === 404) {
+      return "Không tìm thấy bài đổi sách.";
+    }
+
+    if (error.status === 400) {
+      return "Dữ liệu không hợp lệ, vui lòng kiểm tra lại.";
+    }
+
+    return error.message || "Thao tác với bài đổi sách thất bại.";
+  }
+
+
+  async function handleOpenBookDetail(bookId) {
+
+    setBookDetailOpen(true);
+
+    setBookDetailLoading(true);
+
+    setBookDetailError("");
+
+    setBookDetail(null);
+
+    setBookFormOpen(false);
+
+    try {
+
+      // GET /api/library/books/{id}
+      const data = await getBookById(bookId);
+
+      setBookDetail(data);
+
+    } catch (error) {
+
+      console.error(
+
+        "Fetch book detail failed:",
+
+        error
+
+      );
+
+      setBookDetailError(getBookErrorMessage(error));
+
+    } finally {
+
+      setBookDetailLoading(false);
+
+    }
+
+  }
+
+
+  // Mở chi tiết bài đăng từ danh sách Exchange Match.
+  function handleOpenBookMatch(match) {
+
+    handleOpenBookDetail(match?.matchedPostId);
+
+  }
+
+
+  function closeBookDetail() {
+
+    setBookDetailOpen(false);
+
+    setBookDetail(null);
+
+  }
+
+
+  // =====================================================
   // RENDER
   // =====================================================
 
@@ -2346,9 +2780,10 @@ export default function App() {
            onViewProfile={showProfile}
            onSetupPreferences={showPreferences}
 onViewMyPosts={showMyPosts}
-            onOpenMatching={showSmartMatching}
-            onOpenLostFound={showLostFound}
-          />
+onOpenMatching={showSmartMatching}
+           onOpenLostFound={showLostFound}
+           onOpenLibrary={showLibrary}
+         />
 
        )}
 
@@ -2495,6 +2930,7 @@ onEditPreferences={showPreferences}
                success={lostFoundSuccess}
                onSubmitClaim={handleSubmitClaim}
                onCloseClaim={closeClaim}
+<<<<<<< Updated upstream
 claimsItem={claimsItem}
                 claims={claims}
                 claimsLoading={claimsLoading}
@@ -2507,22 +2943,115 @@ claimsItem={claimsItem}
                 onMarkReturned={handleMarkReturned}
                 onBack={showProfile}
              />
+=======
+               claimsItem={claimsItem}
+               claims={claims}
+               claimsLoading={claimsLoading}
+               claimsError={claimsError}
+               onOpenClaims={handleOpenClaims}
+               onCloseClaims={closeClaims}
+onBack={showProfile}
+              />
+>>>>>>> Stashed changes
 
-           </section>
+            </section>
 
 
-           <footer className="site-footer">
-             CampusEcomSystemMini · Student & Campus Utility
-           </footer>
+            <footer className="site-footer">
+              CampusEcomSystemMini · Student & Campus Utility
+            </footer>
 
-         </main>
+          </main>
 
-       )}
+        )}
 
 
-       {/* ================================================
-           TRANG BÀI ĐĂNG
-       ================================================= */}
+        {/* ================================================
+            TRANG KHO TÀI LIỆU & SÁCH
+        ================================================= */}
+
+        {page === "library" && user && (
+
+          <main className="auth-page">
+
+            <div className="auth-background-shape shape-one" />
+
+            <div className="auth-background-shape shape-two" />
+
+
+            <header className="site-header">
+
+              <div className="brand">
+
+                <span className="brand-icon">
+                  C
+                </span>
+
+                <span>
+                  Campus
+                  <span className="brand-highlight">
+                    Ecom
+                  </span>
+                </span>
+
+              </div>
+
+              <span className="header-label">
+                STUDENT COMMUNITY
+              </span>
+
+            </header>
+
+
+            <section className="pref-main">
+
+              <LibraryPage
+                mode={libraryMode}
+                onChangeMode={handleChangeLibraryMode}
+                books={books}
+                user={user}
+                loading={booksLoading}
+                saving={booksSaving}
+                error={booksError}
+                success={booksSuccess}
+                filters={bookFilters}
+                onFilterChange={handleBookFilterChange}
+                onResetFilters={handleResetBookFilters}
+                onCreate={() => openBookForm(null)}
+                onEdit={openBookForm}
+                onDelete={handleDeleteBook}
+                onSubmitBook={handleSubmitBook}
+                onOpenDetail={(book) => handleOpenBookDetail(book.id)}
+                onCloseForm={closeBookForm}
+                onCloseDetail={closeBookDetail}
+                formOpen={bookFormOpen}
+                formBook={editingBook}
+                detailOpen={bookDetailOpen}
+                detail={bookDetail}
+                detailLoading={bookDetailLoading}
+                detailError={bookDetailError}
+                matches={bookMatches}
+                matchesLoading={bookMatchesLoading}
+                matchesError={bookMatchesError}
+                onOpenMatch={handleOpenBookMatch}
+                onBack={showProfile}
+              />
+
+            </section>
+
+
+            <footer className="site-footer">
+              CampusEcomSystemMini · Student & Campus Utility
+            </footer>
+
+          </main>
+
+        )}
+
+
+        {/* ================================================
+            TRANG BÀI ĐĂNG
+        ================================================= */}
 
        {page === "posts" && user && (
 
