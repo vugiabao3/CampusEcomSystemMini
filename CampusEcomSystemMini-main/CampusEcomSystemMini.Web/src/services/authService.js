@@ -6,9 +6,30 @@ const API_BASE_URL = (
 ).replace(/\/+$/, "");
 
 const TOKEN_KEY = "campus_access_token";
+const DEMO_TOKEN_KEY = "campus_demo_session";
+
+export function isDemoMode() {
+  const env = import.meta.env.VITE_DEMO_MODE === "true";
+  const host = typeof window !== "undefined" && window.location.hostname.endsWith("pages.dev");
+  const result = env || host;
+  console.log("[DemoMode] VITE_DEMO_MODE=", import.meta.env.VITE_DEMO_MODE, "hostname=", typeof window !== "undefined" ? window.location.hostname : null, "enabled=", result);
+  return result;
+}
+
+const DEMO_USER = {
+  id: "demo-user-1",
+  fullName: "Demo Recruiter",
+  email: "111@gmail.com",
+  role: "User",
+};
+
+export const DEMO_CREDENTIALS = { email: "111@gmail.com", password: "111" };
 
 // Đọc token đã lưu trong trình duyệt
 export function getToken() {
+  if (isDemoMode()) {
+    return localStorage.getItem(DEMO_TOKEN_KEY) ? "demo-token" : null;
+  }
   return localStorage.getItem(TOKEN_KEY);
 }
 
@@ -20,6 +41,14 @@ function saveToken(token) {
 // Xóa token khi đăng xuất hoặc token không còn hợp lệ
 function clearToken() {
   localStorage.removeItem(TOKEN_KEY);
+}
+
+function saveDemoSession() {
+  localStorage.setItem(DEMO_TOKEN_KEY, JSON.stringify(DEMO_USER));
+}
+
+function clearDemoSession() {
+  localStorage.removeItem(DEMO_TOKEN_KEY);
 }
 
 // Hàm dùng chung để gọi Backend
@@ -153,6 +182,15 @@ export async function register({ fullName, email, password }) {
 
 // API 2: POST /api/auth/login
 export async function login({ email, password }) {
+  if (isDemoMode()) {
+    console.log("[DemoMode] login branch: demo");
+    if (email === DEMO_CREDENTIALS.email && password === DEMO_CREDENTIALS.password) {
+      saveDemoSession();
+      return { token: "demo-token", user: DEMO_USER };
+    }
+    throw new Error("Email hoac mat khau khong dung.");
+  }
+  console.log("[DemoMode] login branch: api");
   const data = await request("/api/auth/login", {
     method: "POST",
     body: JSON.stringify({
@@ -177,6 +215,13 @@ export async function login({ email, password }) {
 
 // API 3: GET /api/auth/me
 export async function getMe() {
+  if (isDemoMode()) {
+    console.log("[DemoMode] getMe branch: demo");
+    const raw = localStorage.getItem(DEMO_TOKEN_KEY);
+    if (!raw) throw new Error("Chua dang nhap.");
+    try { return JSON.parse(raw); } catch { return DEMO_USER; }
+  }
+  console.log("[DemoMode] getMe branch: api");
   try {
     return await request("/api/auth/me", {
       method: "GET",
@@ -191,6 +236,12 @@ export async function getMe() {
 
 // API 4: POST /api/auth/logout
 export async function logout() {
+  if (isDemoMode()) {
+    console.log("[DemoMode] logout branch: demo");
+    clearDemoSession();
+    return;
+  }
+  console.log("[DemoMode] logout branch: api");
   try {
     return await request("/api/auth/logout", {
       method: "POST",

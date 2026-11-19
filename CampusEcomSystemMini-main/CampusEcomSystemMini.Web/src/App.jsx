@@ -66,6 +66,8 @@ import {
 
   getToken,
 
+  isDemoMode,
+
   login,
 
   logout,
@@ -1644,9 +1646,9 @@ export default function App() {
 
       // 3. G?i GET /api/auth/me
 
-      const currentUser =
-
-        await getMe();
+      const currentUser = isDemoMode()
+        ? (loginResult?.user ?? null)
+        : await getMe();
 
 
 

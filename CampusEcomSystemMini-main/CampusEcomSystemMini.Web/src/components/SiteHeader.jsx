@@ -27,13 +27,21 @@ function BrandContent() {
   );
 }
 
+import { isDemoMode } from "../services/authService";
+
 export default function SiteHeader({
   onGoHome,
   onLogout,
   label = "STUDENT COMMUNITY",
 }) {
   return (
-    <header className="site-header">
+    <>
+      {isDemoMode() && (
+        <div style={{ background: "#fff3cd", color: "#664d03", padding: "4px 12px", fontSize: "12px", textAlign: "center" }}>
+          DEMO MODE — Demo account – data is stored locally in this browser.
+        </div>
+      )}
+      <header className="site-header">
 
       {onGoHome ? (
         <button
@@ -68,5 +76,6 @@ export default function SiteHeader({
       )}
 
     </header>
+    </>
   );
 }
