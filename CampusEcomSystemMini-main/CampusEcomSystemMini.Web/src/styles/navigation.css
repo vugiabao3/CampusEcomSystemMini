@@ -1,0 +1,183 @@
+/* =====================================================
+   ĐIỀU HƯỚNG DÙNG CHUNG — NAVIGATION & EXIT
+
+   Quy tắc áp dụng cho toàn bộ hệ thống:
+   - Logo "CampusEcom" luôn quay về Trang chủ.
+   - Mọi trang/module đều có nút "← Quay lại".
+   - Mọi modal đều đóng được bằng nút "✕".
+
+   Dùng lại token màu / typography của auth.css.
+   ===================================================== */
+
+/* =====================================================
+   BRAND NÚT ĐIỀU HƯỚNG (dùng trong SiteHeader)
+   ===================================================== */
+
+.brand--button {
+  padding: 4px 10px 4px 4px;
+
+  border: 1px solid transparent;
+  border-radius: 14px;
+
+  background: transparent;
+
+  text-align: left;
+
+  transition:
+    background 0.18s,
+    border-color 0.18s,
+    opacity 0.18s;
+}
+
+.brand--button:hover {
+  border-color: #dbe4f7;
+  background: #ffffffb3;
+}
+
+.brand--button:focus-visible {
+  outline: 2px solid #2459d3;
+  outline-offset: 2px;
+}
+
+.brand--button:active {
+  background: #eef3ff;
+}
+
+.brand--button:hover .brand-icon {
+  transform: rotate(-6deg) scale(1.05);
+}
+
+.brand-icon {
+  transition: transform 0.22s;
+}
+
+
+/* =====================================================
+   NÚT "← QUAY LẠI"
+   ===================================================== */
+
+.nav-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+
+  min-height: 38px;
+  padding: 9px 15px 9px 12px;
+
+  border: 1px solid #e1e6ef;
+  border-radius: 11px;
+
+  color: #45536a;
+  background: #ffffff;
+
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: -0.1px;
+
+  white-space: nowrap;
+
+  transition:
+    color 0.16s,
+    border-color 0.16s,
+    background 0.16s,
+    transform 0.15s;
+}
+
+.nav-back-btn:hover {
+  border-color: #b9cbf0;
+  color: #2459d3;
+  background: #f2f6ff;
+}
+
+.nav-back-btn:active {
+  transform: translateY(1px);
+}
+
+.nav-back-btn:focus-visible {
+  outline: 2px solid #2459d3;
+  outline-offset: 2px;
+}
+
+.nav-back-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.nav-back-arrow {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+
+  transition: transform 0.18s;
+}
+
+.nav-back-btn:hover .nav-back-arrow {
+  transform: translateX(-2px);
+}
+
+
+/* Vị trí back button nằm trong toolbar dùng chung của các trang. */
+.posts-toolbar .nav-back-btn,
+.pref-actions .nav-back-btn {
+  margin-top: 0;
+}
+
+/* Hàng chứa nút Quay lại ở đầu thẻ trang. */
+.profile-top-bar,
+.feed-back {
+  display: flex;
+  justify-content: flex-start;
+
+  margin-bottom: 18px;
+}
+
+
+/* =====================================================
+   HEADER CỦA TRANG CHỦ / CỘNG ĐỒNG
+   (nằm chung nhóm với SiteHeader cho dễ tra cứu)
+   ===================================================== */
+
+.home-brand--button {
+  padding: 0;
+  border: none;
+  border-radius: 14px;
+
+  background: transparent;
+
+  text-align: left;
+
+  transition:
+    opacity 0.18s,
+    transform 0.18s;
+}
+
+.home-brand--button:hover {
+  opacity: 0.82;
+  transform: translateY(-1px);
+}
+
+.home-brand--button:focus-visible {
+  outline: 2px solid var(--home-primary);
+  outline-offset: 3px;
+}
+
+.home-brand--button:hover .home-brand-mark {
+  transform: rotate(-6deg) scale(1.05);
+}
+
+
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+
+@media (max-width: 560px) {
+  .nav-back-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .posts-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

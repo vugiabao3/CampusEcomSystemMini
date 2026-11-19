@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="CampusEcomSystemMini.Api/CampusEcomSystemMini.Api.csproj" />
+  <Project Path="CampusEcomSystemMini.Application/CampusEcomSystemMini.Application.csproj" />
+  <Project Path="CampusEcomSystemMini.Domain/CampusEcomSystemMini.Domain.csproj" />
+  <Project Path="CampusEcomSystemMini.Infrastructure/CampusEcomSystemMini.Infrastructure.csproj" />
+  <Project Path="CampusEcomSystemMini.Tests/CampusEcomSystemMini.Tests.csproj" />
+</Solution>

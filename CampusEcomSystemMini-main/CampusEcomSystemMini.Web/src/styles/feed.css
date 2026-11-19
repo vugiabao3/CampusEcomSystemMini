@@ -1,0 +1,716 @@
+/* =====================================================
+   TẤT CẢ BÀI ĐĂNG — CỘNG ĐỒNG SINH VIÊN
+
+   Trang này dùng chung CampusHeader + .home-page với Trang chủ,
+   nên chỉ cần style riêng cho phần feed. Toàn bộ class dùng
+   tiền tố "feed-" để không đụng các module khác.
+   ===================================================== */
+
+.feed-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.feed-main {
+  flex: 1 0 auto;
+
+  width: min(820px, calc(100% - 48px));
+
+  margin: 0 auto;
+
+  padding: 30px 0 56px;
+}
+
+
+/* =====================================================
+   HEADER FEED
+   ===================================================== */
+
+.feed-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 22px;
+
+  padding: 28px 30px;
+
+  border: 1px solid var(--home-border);
+  border-radius: 20px;
+
+  background:
+    radial-gradient(circle at 92% 0%, #e3ecff 0, transparent 46%),
+    linear-gradient(135deg, #ffffff 0%, #f8faff 60%, #eef2ff 100%);
+
+  box-shadow: var(--home-shadow);
+}
+
+.feed-hero-text {
+  min-width: 0;
+}
+
+.feed-hero-text .eyebrow {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.feed-title {
+  margin: 0;
+
+  font-size: clamp(24px, 3vw, 31px);
+  font-weight: 800;
+  letter-spacing: -1.1px;
+  line-height: 1.22;
+}
+
+.feed-subtitle {
+  max-width: 46ch;
+
+  margin: 9px 0 0;
+
+  color: #55637b;
+  font-size: 13px;
+  line-height: 1.75;
+}
+
+.feed-stats {
+  margin: 14px 0 0;
+
+  color: var(--home-soft);
+  font-size: 11.5px;
+}
+
+.feed-stats strong {
+  color: var(--home-primary);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.feed-hero-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+
+/* =====================================================
+   BỘ LỌC
+   ===================================================== */
+
+.feed-page .posts-filters {
+  margin-top: 18px;
+
+  background: var(--home-surface);
+}
+
+.feed-filter-note {
+  margin: 12px 2px 0;
+
+  color: var(--home-soft);
+  font-size: 11px;
+}
+
+/* Thông báo lỗi / thành công dùng chung class của hệ thống. */
+.feed-page .message {
+  margin-top: 16px;
+}
+
+
+/* =====================================================
+   TRẠNG THÁI: LOADING / EMPTY
+   ===================================================== */
+
+.feed-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+
+  margin-top: 18px;
+
+  padding: 54px 28px;
+
+  border: 1px solid var(--home-border);
+  border-radius: 18px;
+
+  color: var(--home-muted);
+  background: var(--home-surface);
+  box-shadow: var(--home-shadow);
+
+  font-size: 12.5px;
+  text-align: center;
+}
+
+.feed-state--empty {
+  border-style: dashed;
+  background: #fbfcff;
+}
+
+.feed-state-icon {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+
+  border-radius: 50%;
+
+  color: var(--home-primary);
+  background: #edf3ff;
+}
+
+.feed-state strong {
+  color: var(--home-text);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+
+.feed-state p {
+  max-width: 40ch;
+  margin: 0;
+
+  color: var(--home-soft);
+  font-size: 12px;
+  line-height: 1.75;
+}
+
+.feed-state .home-btn {
+  margin-top: 6px;
+}
+
+.feed-spinner {
+  width: 26px;
+  height: 26px;
+
+  border: 3px solid #e3eafb;
+  border-top-color: var(--home-primary);
+  border-radius: 50%;
+
+  animation: feed-spin 0.75s linear infinite;
+}
+
+@keyframes feed-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feed-spinner {
+    animation-duration: 2.4s;
+  }
+}
+
+
+/* =====================================================
+   DANH SÁCH FEED
+   ===================================================== */
+
+.feed-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  margin-top: 18px;
+}
+
+.feed-card {
+  padding: 22px 24px;
+
+  border: 1px solid var(--home-border);
+  border-radius: 18px;
+
+  background: var(--home-surface);
+
+  box-shadow: var(--home-shadow);
+
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    transform 0.2s;
+}
+
+.feed-card:hover {
+  border-color: #dbe4f5;
+
+  box-shadow: var(--home-shadow-hover);
+
+  transform: translateY(-2px);
+}
+
+
+/* --- ĐẦU THẺ: AVATAR + TÁC GIẢ --- */
+
+.feed-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.feed-avatar {
+  display: grid;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  overflow: hidden;
+  place-items: center;
+
+  border-radius: 50%;
+
+  color: #ffffff;
+  background: linear-gradient(
+    135deg,
+    var(--home-primary),
+    var(--home-accent)
+  );
+
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+
+.feed-avatar-img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+}
+
+.feed-author {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.feed-author-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.feed-author-name {
+  color: var(--home-text);
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+
+  overflow-wrap: anywhere;
+}
+
+.feed-owner-badge {
+  padding: 3px 9px;
+  border-radius: 999px;
+
+  color: #027a48;
+  background: #d3f8df;
+
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+
+.feed-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+
+  margin-top: 3px;
+
+  color: var(--home-soft);
+  font-size: 11px;
+}
+
+.feed-meta-dot {
+  color: #c3ccdb;
+}
+
+.feed-type {
+  color: var(--home-primary);
+  font-weight: 700;
+}
+
+.feed-card-mark {
+  flex: 0 0 auto;
+
+  color: #c8d1e0;
+
+  transition: color 0.2s;
+}
+
+.feed-card:hover .feed-card-mark {
+  color: var(--home-primary);
+}
+
+
+/* --- NỘI DUNG --- */
+
+.feed-card-title {
+  margin: 16px 0 0;
+
+  color: var(--home-text);
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1.4;
+}
+
+.feed-card-content {
+  margin: 9px 0 0;
+
+  color: #4c5a72;
+  font-size: 13px;
+  line-height: 1.8;
+
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+
+  /* Cắt bớt nội dung dài, xem đầy đủ qua nút "Xem chi tiết". */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 6;
+  overflow: hidden;
+}
+
+
+/* --- HÀNH ĐỘNG --- */
+
+.feed-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+
+  margin-top: 18px;
+  padding-top: 14px;
+
+  border-top: 1px solid var(--home-border-soft);
+}
+
+.feed-action {
+  display: inline-flex;
+  flex: 1 1 120px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  min-height: 40px;
+  padding: 9px 12px;
+
+  border: none;
+  border-radius: 10px;
+
+  color: #55637b;
+  background: transparent;
+
+  font-size: 11.5px;
+  font-weight: 700;
+
+  transition:
+    color 0.16s,
+    background 0.16s;
+}
+
+.feed-action:hover {
+  color: var(--home-primary);
+  background: #eef3ff;
+}
+
+.feed-action:focus-visible {
+  outline: 2px solid var(--home-primary);
+  outline-offset: 1px;
+}
+
+.feed-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.feed-action--like:hover {
+  color: #d94343;
+  background: #fff1f2;
+}
+
+.feed-like--active {
+  color: #d94343;
+  background: #fff1f2;
+}
+
+.feed-like--active:hover {
+  color: #bb3030;
+  background: #ffe4e6;
+}
+
+.feed-action--danger:hover {
+  color: #bb3030;
+  background: #fff5f5;
+}
+
+
+/* =====================================================
+   NÚT "YÊU CẦU KẾT NỐI"
+   Dùng chung cho thẻ bài đăng, modal chi tiết bài đăng và
+   thẻ Lost & Found — cùng hệ thống Connection của MODULE_5.
+   ===================================================== */
+
+.connect-request {
+  display: inline-flex;
+  flex: 1 1 130px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  min-height: 40px;
+  padding: 9px 14px;
+
+  border: 1px solid transparent;
+  border-radius: 10px;
+
+  font-size: 11.5px;
+  font-weight: 800;
+
+  white-space: nowrap;
+
+  transition:
+    color 0.16s,
+    background 0.16s,
+    border-color 0.16s;
+}
+
+/* Bản nằm trong modal chi tiết: cao và rộng hơn một chút. */
+.connect-request--lg {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 11px 18px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+/* Nhóm nút "Đã kết nối" + "Mở Chat" nằm cạnh nhau. */
+.connect-request-group {
+  display: inline-flex;
+  flex: 1 1 100%;
+  gap: 6px;
+}
+
+.connect-request-group .connect-request {
+  flex: 1 1 0;
+}
+
+.connect-request:focus-visible {
+  outline: 2px solid var(--home-primary);
+  outline-offset: 1px;
+}
+
+.connect-request:disabled {
+  cursor: not-allowed;
+}
+
+/* Trạng thái: có thể gửi. */
+.connect-request--action {
+  color: #ffffff;
+  background: var(--home-primary);
+}
+
+.connect-request--action:hover {
+  background: var(--home-primary-strong);
+}
+
+.connect-request--action:disabled {
+  opacity: 0.6;
+}
+
+/* Trạng thái: đã gửi, đang chờ phản hồi. */
+.connect-request--pending {
+  color: #9a6b00;
+  background: #fff6e0;
+  border-color: #f4e2b4;
+}
+
+/* Trạng thái: đã là người kết nối. */
+.connect-request--connected {
+  color: #027a48;
+  background: #d3f8df;
+  border-color: #b7eecd;
+}
+
+/* Mở thẳng Messenger sau khi đã kết nối. */
+.connect-request--chat {
+  color: var(--home-primary);
+  background: #edf3ff;
+  border-color: #d7e2f7;
+}
+
+.connect-request--chat:hover {
+  background: #e2ebff;
+}
+
+/* =====================================================
+   BRAND NÚT ĐIỀU HƯỚNG + AVATAR HEADER
+   (nằm chung nhóm với SiteHeader cho dễ tra cứu)
+   ===================================================== */
+
+
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+
+@media (max-width: 860px) {
+  .feed-main {
+    padding: 24px 0 46px;
+  }
+
+  .feed-hero {
+    align-items: flex-start;
+    padding: 24px 22px;
+  }
+
+  .feed-hero-actions {
+    width: 100%;
+  }
+
+  .feed-hero-actions .home-btn {
+    flex: 1 1 auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .feed-main {
+    width: calc(100% - 32px);
+  }
+
+  .feed-card {
+    padding: 18px 16px;
+    border-radius: 15px;
+  }
+
+  .feed-card-title {
+    font-size: 15.5px;
+  }
+
+  .feed-card-content {
+    font-size: 12.5px;
+    -webkit-line-clamp: 8;
+  }
+
+  /* Nút hành động xuống 2 cột cho dễ bấm trên màn hình nhỏ. */
+  .feed-card-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .feed-action {
+    flex: none;
+    width: 100%;
+  }
+
+  .feed-card-mark {
+    display: none;
+  }
+
+  .feed-state {
+    padding: 40px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .feed-hero {
+    padding: 20px 16px;
+    border-radius: 16px;
+  }
+
+  .feed-title {
+    font-size: 22px;
+    letter-spacing: -0.8px;
+  }
+
+  .feed-hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .feed-hero-actions .home-btn {
+    width: 100%;
+  }
+
+  .feed-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 13px;
+  }
+}
+
+/* Nút Back to Top lửng bên phải dưới. */
+.feed-back-to-top {
+  position: fixed;
+
+  right: 20px;
+  bottom: 24px;
+
+  z-index: 1000;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  min-width: 96px;
+  min-height: 40px;
+  padding: 0 12px;
+
+  border: none;
+  border-radius: 999px;
+
+  color: #ffffff;
+  background: var(--home-primary);
+
+  font-size: 12px;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  box-shadow: 0 8px 16px rgba(36, 89, 211, 0.35);
+
+  transition:
+    transform 0.18s,
+    background 0.18s,
+    box-shadow 0.18s,
+    opacity 0.2s,
+    visibility 0.2s;
+
+  opacity: 1;
+  visibility: visible;
+}
+
+.feed-back-to-top:hover {
+  background: var(--home-primary-strong);
+  box-shadow: 0 12px 24px rgba(36, 89, 211, 0.45);
+  transform: translateY(-1px);
+}
+
+.feed-back-to-top:focus-visible {
+  outline: 2px solid var(--home-primary);
+  outline-offset: 2px;
+}
+
+.feed-back-to-top span {
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .feed-back-to-top {
+    right: 16px;
+    bottom: 16px;
+    min-width: 80px;
+    min-height: 36px;
+    padding: 0 10px;
+    font-size: 11px;
+    gap: 5px;
+  }
+
+  .feed-back-to-top span {
+    display: none;
+  }
+}

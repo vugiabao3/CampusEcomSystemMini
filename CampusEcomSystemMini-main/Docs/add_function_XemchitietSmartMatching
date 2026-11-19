@@ -1,0 +1,186 @@
+# Task: Complete the Smart Matching "View Details" Navigation to the Original Community Post
+
+You are working on the existing CampusEcomSystemMini project.
+
+**Project directory:**
+`C:\Users\HI TCC\Downloads\CampusEcomSystemMini-main\CampusEcomSystemMini-main`
+
+Your task is to implement and verify one specific feature: when a user clicks the **"Xem chi tiết" (View Details)** button on a Smart Matching result, the application must navigate to the corresponding original post created by its actual author and displayed in the Community section.
+
+This is a targeted feature enhancement, NOT a request to rewrite the project.
+
+## 1. Read the Documentation Before Making Changes
+
+Before editing any code, carefully read:
+
+- `AI_GUIDE.md`
+- `MODULE_1.md`
+- `MODULE_2.md`
+- `MODULE_3.md`
+- `MODULE_4.md`
+- `MODULE_5.md`
+- `MODULE_6.md`
+
+Locate these files using the actual project structure. Do not assume they are all in the repository root.
+
+Pay particular attention to the module that specifies Smart Matching, the module responsible for Community posts, and `AI_GUIDE.md` for architecture and implementation conventions. Read other module files only as needed to understand dependencies and avoid breaking existing functionality.
+
+Inspect the existing implementation thoroughly, including:
+
+- The Smart Matching page and its result components.
+- The "Xem chi tiết" button and its click handler.
+- Frontend routing and navigation conventions.
+- The original Community post list and post detail page, if one exists.
+- The relevant React components, API clients, DTOs and TypeScript/JavaScript models.
+- The corresponding ASP.NET Core controllers, application handlers/services, repositories and database entities.
+- Authentication, authorization and post visibility rules.
+- Existing tests and Docker Compose service configuration.
+
+Trace the complete data flow before changing anything. Determine how a Smart Matching result references its original post and how the Community page loads that post.
+
+## 2. Required User Behavior
+
+When a user opens Smart Matching and clicks "Xem chi tiết" on a matching result:
+
+1. Identify the exact original post associated with that matching result.
+2. Navigate to the existing Community post detail page or the project's established equivalent.
+3. Display the actual original post, not a newly generated post, mock object or duplicated copy.
+4. Load the post using its stable database identifier and the existing API/data-loading flow.
+5. Display the correct post content, author information, images and other fields supported by the existing Community implementation.
+6. Ensure the author shown is the actual author of the original post.
+7. Ensure the URL, selected post and displayed content all refer to the same post.
+8. Preserve the user's ability to navigate back to Smart Matching and continue browsing results.
+
+If the Community section uses a post detail route, reuse that route. Do not create a second, incompatible post detail system when an appropriate one already exists.
+
+## 3. Trace the Original Post Correctly
+
+Before implementing navigation, verify the relationship between a Smart Matching result and its source post.
+
+- Determine whether the matching result already contains the original post ID.
+- If it does, reuse the existing ID and data flow.
+- If it contains only partial information, identify the correct existing backend relationship or API needed to retrieve the original post.
+- Never identify a post by its title, list position, array index, author name alone or other non-unique display values.
+- Never assume the matching result ID is the same as the original Community post ID.
+- Never hardcode a post ID or use sample data to make the feature appear to work.
+
+If the existing data model cannot reliably identify the original post, implement only the minimal, architecture-consistent change needed to establish that relationship.
+
+## 4. Backend and Frontend Requirements
+
+### Frontend
+
+- Connect the existing "Xem chi tiết" button to the correct navigation handler.
+- Use the project's existing routing and API conventions.
+- Fetch the original post from the backend when required.
+- Handle loading, missing posts, API failures and unauthorized access.
+- Prevent navigation to an incorrect post when the matching result has an invalid or missing source post ID.
+- Preserve the existing UI design and responsive behavior.
+- Do not change unrelated screens, styles, routes or features.
+
+### Backend
+
+Only modify the backend if the existing implementation requires it.
+
+- Reuse the existing Community post detail API if it satisfies the requirement.
+- If a new endpoint is genuinely necessary, follow the existing Clean Architecture, DTO, dependency injection, validation and error-handling conventions.
+- Enforce authentication and authorization according to the existing requirements.
+- Ensure users cannot access posts they are not permitted to view.
+- Return the actual post and author data from the database.
+- Avoid unnecessary database schema changes, migrations or new abstractions.
+
+### Scope protection
+
+Do not rewrite Smart Matching, Community, authentication, the database architecture or unrelated modules.
+
+Do not remove existing features or change business rules to simplify implementation.
+
+Do not refactor unrelated code merely for stylistic preference.
+
+If you discover an unrelated defect, document it separately instead of expanding the scope.
+
+## 5. Testing Is Mandatory
+
+**Do not stop after editing code or obtaining a successful build. The feature must be tested against the running Dockerized application.**
+
+First inspect the current Docker Compose configuration and determine the actual service names and ports. Preserve existing environment configuration and data.
+
+From the project directory:
+
+`C:\Users\HI TCC\Downloads\CampusEcomSystemMini-main\CampusEcomSystemMini-main`
+
+Start the application using:
+
+`docker compose up`
+
+Use the existing Docker Compose configuration and wait until the required services are ready. Check the actual container status and logs. Do not assume the application is ready merely because the command was issued.
+
+If code changes require rebuilding the API, use:
+
+`docker compose up -d --build api`
+
+If code changes require rebuilding the frontend, use:
+
+`docker compose up -d --build web`
+
+If both services require rebuilding, rebuild both as appropriate. If the Compose service names differ, inspect the configuration and use the actual service names rather than blindly running these commands.
+
+After rebuilding, verify that the updated containers start successfully and that the frontend can communicate with the API.
+
+### Required test cases
+
+Test all applicable cases:
+
+1. Open Smart Matching and verify that matching results load.
+2. Click "Xem chi tiết" on a result.
+3. Verify that navigation reaches the correct Community post detail page.
+4. Verify that the displayed post ID matches the selected result's original post ID.
+5. Verify that the displayed content, author and images belong to that original post.
+6. Test at least two different matching results and confirm that each opens its own correct post.
+7. Navigate back and verify that Smart Matching remains usable.
+8. Test a post that no longer exists or has been deleted, if supported by the current implementation.
+9. Test API errors and unauthorized access where applicable.
+10. Check browser console errors, API/network failures and relevant Docker logs.
+
+Use real application data and real API responses. Do not substitute mock data for end-to-end verification.
+
+If authentication is required, use the application's legitimate test accounts and existing login flow. Do not bypass security controls.
+
+## 6. Build, Regression Checks and Final Verification
+
+Before finishing:
+
+- Run the relevant frontend and backend tests available in the repository.
+- Build the affected projects.
+- Rebuild the affected Docker services.
+- Verify the feature in the running application.
+- Inspect the final diff and ensure only necessary files were changed.
+- Check that no existing Smart Matching or Community functionality was broken.
+- Do not run destructive database operations or delete existing user data.
+
+A successful build alone does not count as successful feature verification.
+
+If browser interaction or another necessary test capability is unavailable, state that limitation honestly. Do not claim to have manually verified a UI interaction that you did not perform.
+
+## 7. Completion Criteria
+
+You may report the task as completed only when:
+
+- The button navigates to the correct original Community post.
+- The post and author data are correct.
+- The affected services build and start successfully.
+- The required applicable tests pass.
+- The running application has been verified, with evidence of the actual result.
+- No unrelated existing functionality has been intentionally changed.
+
+At the end, provide a concise report containing:
+
+1. Root cause of the original problem.
+2. Files changed and why each change was necessary.
+3. Actual implementation flow from Smart Matching to the Community post.
+4. Docker commands executed and their actual results.
+5. Tests executed, pass/fail results and verification evidence.
+6. Any tests that could not be performed and the reason.
+7. Any remaining limitations or unresolved issues.
+
+**Do not claim success without evidence. If a test fails, investigate and fix the issue within the defined scope, rebuild the affected service, and rerun the relevant tests. If you cannot resolve it, report the exact blocker instead of marking the feature as complete.**

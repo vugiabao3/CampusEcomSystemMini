@@ -1,0 +1,6 @@
+@CampusEcomSystemMini.Api_HostAddress = http://localhost:5067
+
+GET {{CampusEcomSystemMini.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

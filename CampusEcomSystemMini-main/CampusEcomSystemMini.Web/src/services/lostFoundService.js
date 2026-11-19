@@ -1,0 +1,145 @@
+// lostFoundService.js — gọi API Campus Lost & Found (MODULE 3)
+import { request } from "./authService.js";
+
+// Nhóm bài đăng và trạng thái Lost & Found.
+// Giá trị Type/Status do Backend quyết định.
+export const LOST_FOUND_FILTERS = [
+  { value: "", label: "Tất cả đồ thất lạc" },
+  { value: "Lost", label: "Cần Tìm (Báo Mất)" },
+  { value: "Found", label: "Nhặt Được (Chờ Chủ)" },
+  { value: "Returned", label: "Đã Trao Trả" },
+];
+
+// Chuyển giá trị filter thành tham số API:
+// Cần Tìm / Nhặt Được dùng type,
+// Đã Trao Trả dùng status.
+export function buildLostFoundParams(filter) {
+  if (!filter) {
+    return "";
+  }
+
+  if (filter === "Returned") {
+    return "?status=Returned";
+  }
+
+  if (filter === "Lost" || filter === "Found") {
+    return `?type=${filter}`;
+  }
+
+  return "";
+}
+
+// API: GET /api/lost-found?type=Lost | Found | status=Returned
+// filter = "" | "Lost" | "Found" | "Returned"
+export async function getLostFoundPosts(filter = "") {
+  return request(`/api/lost-found${buildLostFoundParams(filter)}`, {
+    method: "GET",
+  });
+}
+
+// API: GET /api/lost-found/map
+// Toạ độ do Backend cung cấp, Frontend chỉ hiển thị pin.
+export async function getLostFoundMap() {
+  return request("/api/lost-found/map", {
+    method: "GET",
+  });
+}
+
+// API: POST /api/lost-found/{postId}/secret-question
+// Người nhặt đồ (chủ bài đăng Found) tạo câu hỏi + câu trả lời.
+// Câu trả lời được hash ở Backend và không được trả về.
+export async function createSecretQuestion(postId, { question, answer }) {
+  return request(`/api/lost-found/${postId}/secret-question`, {
+    method: "POST",
+    body: JSON.stringify({
+      question,
+      answer,
+    }),
+  });
+}
+
+// API: GET /api/lost-found/{postId}/secret-question
+// Chỉ trả về câu hỏi, không có câu trả lời.
+export async function getSecretQuestion(postId) {
+  return request(`/api/lost-found/${postId}/secret-question`, {
+    method: "GET",
+  });
+}
+
+// API: POST /api/lost-found/{postId}/claims
+// Người bị mất đồ gửi câu trả lời để nhận lại đồ.
+// Backend tự xác minh, không gửi userId.
+export async function createClaim(postId, { answer }) {
+  return request(`/api/lost-found/${postId}/claims`, {
+    method: "POST",
+    body: JSON.stringify({
+      answer,
+    }),
+  });
+}
+
+// API: GET /api/lost-found/{postId}/claims
+// Chỉ chủ bài đăng Found được xem danh sách yêu cầu nhận đồ.
+export async function getClaims(postId) {
+  return request(`/api/lost-found/${postId}/claims`, {
+    method: "GET",
+  });
+}
+
+// API: PUT /api/lost-found/claims/{claimId}/approve
+// Chủ bài đăng Found duyệt yêu cầu nhận đồ hợp lệ.
+// Backend tự kiểm tra chủ bài đăng và trạng thái yêu cầu.
+export async function approveClaim(claimId) {
+  return request(`/api/lost-found/claims/${claimId}/approve`, {
+    method: "PUT",
+  });
+}
+
+// API: PUT /api/lost-found/claims/{claimId}/reject
+// Chủ bài đăng Found từ chối yêu cầu nhận đồ không hợp lệ.
+export async function rejectClaim(claimId) {
+  return request(`/api/lost-found/claims/${claimId}/reject`, {
+    method: "PUT",
+  });
+}
+
+// API: PUT /api/lost-found/{postId}/returned
+// Chủ bài đăng Found xác nhận đã trao trả đồ.
+// Backend chỉ cho phép khi đã có yêu cầu nhận đồ được duyệt.
+export async function markReturned(postId) {
+  return request(`/api/lost-found/${postId}/returned`, {
+    method: "PUT",
+  });
+}
+
+// API: GET /api/lost-found/{postId}/matches
+// Trả về các bài đăng đối diện (Lost ↔ Found) trong bán kính 500m.
+export async function getMatches(postId) {
+  return request(`/api/lost-found/${postId}/matches`, {
+    method: "GET",
+  });
+}
+
+// API: GET /api/lost-found/nearby
+// Tìm kiếm bài đăng Lost/Found gần toạ độ cho trước.
+export async function getNearby({ lat, lng, type, radiusMeters = 500 }) {
+  const params = new URLSearchParams();
+  params.set("lat", lat.toString());
+  params.set("lng", lng.toString());
+  if (type) params.set("type", type);
+  params.set("radiusMeters", radiusMeters.toString());
+  return request(`/api/lost-found/nearby?${params.toString()}`, {
+    method: "GET",
+  });
+}
+
+// API: GET /api/lost-found/locations/suggestions
+// Gợi ý địa chỉ từ Photon (OpenStreetMap) cho autocomplete.
+export async function getLocationSuggestions(query, limit = 5) {
+  const params = new URLSearchParams();
+  params.set("q", query);
+  params.set("limit", limit.toString());
+  return request(`/api/lost-found/locations/suggestions?${params.toString()}`, {
+    method: "GET",
+  });
+}

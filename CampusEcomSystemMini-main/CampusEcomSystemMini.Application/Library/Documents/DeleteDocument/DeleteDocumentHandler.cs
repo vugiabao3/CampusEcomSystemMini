@@ -1,0 +1,84 @@
+using CampusEcomSystemMini.Application.Interfaces;
+using MediatR;
+
+using Microsoft.Extensions.Caching.Distributed;
+namespace CampusEcomSystemMini.Application.Library.Documents.DeleteDocument;
+
+public class DeleteDocumentHandler
+    : IRequestHandler<DeleteDocumentCommand, DeleteDocumentResult>
+{
+    private readonly IDocumentRepository _documentRepository;
+    private readonly IDocumentStorage _documentStorage;
+    private readonly ICurrentUserService _currentUserService;
+
+    private readonly IDistributedCache _cache;
+    public DeleteDocumentHandler(
+    IDocumentRepository documentRepository,
+    IDocumentStorage documentStorage,
+    ICurrentUserService currentUserService,
+    IDistributedCache cache)
+{
+    _documentRepository = documentRepository;
+    _documentStorage = documentStorage;
+    _currentUserService = currentUserService;
+    _cache = cache;
+}
+
+    public async Task<DeleteDocumentResult> Handle(
+        DeleteDocumentCommand request,
+        CancellationToken cancellationToken)
+    {
+        var userId = _currentUserService.UserId;
+
+        var document = await _documentRepository.GetByIdAsync(
+            request.Id,
+            cancellationToken);
+
+        if (document is null)
+        {
+            return new DeleteDocumentResult(
+                DeleteDocumentOutcome.NotFound,
+                null);
+        }
+
+        // Không cho xóa tài liệu của người dùng khác.
+        if (document.UserId != userId)
+        {
+            return new DeleteDocumentResult(
+                DeleteDocumentOutcome.NotOwner,
+                null);
+        }
+
+        _documentRepository.Remove(document);
+
+        await _documentRepository.SaveChangesAsync(
+            cancellationToken);
+
+        // Invalidate cache sau khi xóa tài liệu thành công.
+try
+{
+    await _cache.SetStringAsync(
+        "Library:Documents:List:Version",
+        Guid.NewGuid().ToString("N"),
+        new DistributedCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(30)
+        },
+        CancellationToken.None);
+}
+catch (Exception)
+{
+    // Không để lỗi Redis làm API xóa tài liệu báo thất bại.
+}
+
+        // File gốc nằm ngoài database nên phải xóa riêng,
+        // không xóa file của người dùng khác.
+        _documentStorage.Delete(document.StoredFileName);
+
+        return new DeleteDocumentResult(
+            DeleteDocumentOutcome.Deleted,
+            new DeleteDocumentResponse(
+                true,
+                "Document deleted successfully."));
+    }
+}
