@@ -1,0 +1,403 @@
+/* =====================================================
+   CAMPUS LOST & FOUND — MODULE 3 / BATCH 1
+   Dùng chung token màu / typography với auth.css, posts.css
+===================================================== */
+
+.lost-page {
+  width: 100%;
+}
+
+.lost-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.lost-card {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  border: 1px solid #e7ebf3;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px #20345c0a;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.lost-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 36px #20345c14;
+}
+
+.lost-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.lost-card-title {
+  margin: 0 0 5px;
+  color: #17243a;
+  font-size: 15px;
+  letter-spacing: -0.3px;
+}
+
+.lost-card-author {
+  color: #8a96aa;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.lost-card-description {
+  margin: 14px 0 0;
+  color: #45536a;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.lost-card-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.lost-card-meta-item {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #edf0f6;
+  border-radius: 10px;
+}
+
+.lost-card-meta-label {
+  display: block;
+  margin-bottom: 4px;
+  color: #94a0b4;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.lost-card-meta-value {
+  display: block;
+  color: #17243a;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lost-status {
+  flex: 0 0 auto;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.lost-status--lost {
+  color: #b42318;
+  background: #fee4e2;
+}
+
+.lost-status--found {
+  color: #175cd3;
+  background: #dbe8fd;
+}
+
+.lost-status--returned {
+  color: #027a48;
+  background: #d3f8df;
+}
+
+.lost-card .match-card-action {
+  align-self: flex-start;
+  margin-top: 16px;
+}
+
+.lost-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.lost-card-actions .match-card-action {
+  margin-top: 0;
+}
+
+.lost-card-action {
+  padding: 10px 14px;
+  border: none;
+  border-radius: 10px;
+  color: #45536a;
+  background: #f1f3f7;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.lost-card-action:hover {
+  background: #e4e7ee;
+}
+
+
+/* =====================================================
+   YÊU CẦU NHẬN ĐỒ
+===================================================== */
+
+.claim-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.claim-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid #e7ebf3;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.claim-item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.claim-item-side {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.claim-item-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.claim-action {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.claim-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.claim-action--approve {
+  color: #027a48;
+  background: #d3f8df;
+}
+
+.claim-action--approve:not(:disabled):hover {
+  background: #b7efcb;
+}
+
+.claim-action--reject {
+  color: #b42318;
+  background: #fee4e2;
+}
+
+.claim-action--reject:not(:disabled):hover {
+  background: #fbd3d0;
+}
+
+.claim-item-name {
+  color: #17243a;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.claim-item-you {
+  color: #94a0b4;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.claim-item-time {
+  color: #8a96aa;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.claim-status {
+  flex: 0 0 auto;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.claim-status--pending {
+  color: #b54708;
+  background: #fef0c7;
+}
+
+.claim-status--approved {
+  color: #027a48;
+  background: #d3f8df;
+}
+
+.claim-status--rejected {
+  color: #b42318;
+  background: #fee4e2;
+}
+
+.lost-note {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  color: #687995;
+  background: #f4f6fb;
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.lost-question-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid #e7ebf3;
+  border-radius: 14px;
+  background: #fbfcff;
+}
+
+.lost-question-label {
+  color: #94a0b4;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.lost-question-text {
+  margin: 0;
+  color: #17243a;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+
+/* =====================================================
+   CAMPUS MAP
+===================================================== */
+
+.lost-map-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid #edf0f6;
+}
+
+.lost-map {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.lost-map-canvas {
+  width: 100%;
+  height: 340px;
+  border: 1px solid #e7ebf3;
+  border-radius: 16px;
+}
+
+.lost-map-notice {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+  border: 1px dashed #dbe3f1;
+  border-radius: 14px;
+  background: #fbfcff;
+}
+
+.lost-map-notice strong {
+  color: #17243a;
+  font-size: 13px;
+}
+
+.lost-map-notice span {
+  color: #8a96aa;
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.lost-map-pins {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lost-map-pin {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border: 1px solid #e7ebf3;
+  border-left: 4px solid #4778e6;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.lost-map-pin-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.lost-map-pin-head strong {
+  color: #17243a;
+  font-size: 13px;
+}
+
+.lost-map-pin-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  color: #8a96aa;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+
+@media (max-width: 850px) {
+  .lost-list {
+    grid-template-columns: 1fr;
+  }
+
+  .lost-card-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .lost-map-canvas {
+    height: 260px;
+  }
+}
